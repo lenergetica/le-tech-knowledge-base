@@ -1,0 +1,78 @@
+site_name: Tech Knowledge Base
+
+theme:
+  name: material #mkdocs material readthedocs
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - search.suggest
+    - content.code.annotate
+    - navigation.path # Breadcrumbs
+    #- navigation.tabs # Menú superior
+    #- navigation.sections # Agrupa seccions al lateral
+    #- navigation.expand # Obre seccions automàticament
+    - navigation.top # Botó "tornar a dalt"
+    - toc.follow # TOC segueix l'scroll
+    - search.highlight
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Guia de la KB: index.md
+
+  - 01 - Operacions:
+    - 0101: index.md
+
+  - 02 - Processos de negoci:
+    - 0201: index.md
+
+  - 03 - Dades i analítica:
+    - Projecte: index.md
+
+  - 04 - Servidors i Infraestructura:
+      - edison:
+          - GISCE gateway: 04/edison/gateway-gisce.md
+
+  - 05 - Seguretat:
+    - 0501: index.md
+
+  - 06 - Projectes:
+    - 0601: index.md
+
+  - 07 - Desenvolupament:
+    - 0701: index.md
+
+  - 08 - Documentació:
+    - 0801: index.md
+
+  - 09 - Formació:
+    - 0901: index.md
+
+  - 10 - Telecomunicacions:
+    - Plantes:
+      - Cardedeu: telecom/cardedeu.md
+    - Components:
+      - SmartLogger: ot/smartlogger.md
+
+  - 99 - Altres:
+    - 9901: index.md
+
+  - contribute:
+    - Contribuir a la KB: contribute/contribute.md
