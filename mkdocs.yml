@@ -1,7 +1,11 @@
 site_name: Tech Knowledge Base
+site_description: Base de coneixement de l'equip Tech
 
 theme:
   name: material #mkdocs material readthedocs
+  language: ca
+
+  custom_dir: overrides
   palette:
     - scheme: default
       primary: indigo
@@ -14,25 +18,54 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - search.suggest
-    - content.code.annotate
     - navigation.path # Breadcrumbs
-    #- navigation.tabs # Menú superior
+    - navigation.top # Botó "tornar a dalt"
+    #- navigation.tabs # Menú principal en pestanyes a la part superior
     #- navigation.sections # Agrupa seccions al lateral
     #- navigation.expand # Obre seccions automàticament
-    - navigation.top # Botó "tornar a dalt"
+
+    - search.suggest # Suggeriments durant la cerca
+    - search.highlight # Ressalta els termes cercats
+
+    - content.code.copy # Botó per copiar blocs de codi
+    - content.code.annotate
+
     - toc.follow # TOC segueix l'scroll
-    - search.highlight
-    - content.code.copy
+
+plugins:
+    - search
+
+    - git-revision-date-localized:
+        locale: ca
+        type: custom
+        custom_format: "%d/%m/%Y %H:%M"
+        enable_creation_date: false
+        #enable_git_follow: false
+
 markdown_extensions:
-  - admonition
-  - pymdownx.superfences
-  - pymdownx.highlight
-  - pymdownx.superfences:
+  - admonition # !!! note, !!! warning, !!! tip, etc.
+  - pymdownx.emoji # :smile: :heart: :+1:
+  - pymdownx.details # Permet blocs desplegables (??? info)
+  - pymdownx.highlight: # Ressaltat avançat de sintaxi
+      anchor_linenums: true
+  - pymdownx.superfences: # Millora els blocs de codi i Mermaid
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+          format: pymdownx.superfences.fence_code_format
+  - pymdownx.snippets # Reutilització de contingut entre fitxers
+  - pymdownx.tabbed # Permet pestanyes dins del contingut (=== "PowerShell", === "Bash")
+  - tables # Taules Markdown
+  - attr_list # Permet afegir atributs HTML/CSS als elements
+  - md_in_html # Permet Markdown dins de blocs HTML
+  - pymdownx.keys # Mostrar tecles (Ctrl+C, Alt+F4...)
+  - pymdownx.tasklist: # Checklists interactives
+      custom_checkbox: true
+
+extra_javascript:
+    - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+    - assets/javascripts/mermaid-init.js
+    - assets/javascripts/review-warning.js # Banner de documents pendents de revisió
 
 nav:
   - Guia de la KB: index.md
@@ -49,6 +82,8 @@ nav:
   - 04 - Servidors i Infraestructura:
       - edison:
           - GISCE gateway: 04/edison/gateway-gisce.md
+      - Postgres:
+          - Configuració postgres_fdw: 04/Postgres/Configurar-postgres_fdw.md
 
   - 05 - Seguretat:
     - 0501: index.md
