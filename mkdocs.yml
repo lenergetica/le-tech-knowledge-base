@@ -66,6 +66,7 @@ extra_javascript:
     - https://unpkg.com/mermaid@10/dist/mermaid.min.js
     - assets/javascripts/mermaid-init.js
     - assets/javascripts/review-warning.js # Banner de documents pendents de revisió
+    - assets/javascripts/status-warning.js # Banner de documents en construcció
 
 nav:
   - Guia de la KB: index.md

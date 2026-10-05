@@ -10,4 +10,4 @@ Concentrador de comunicacions de la planta.
 - Comptador
 - Centre de control
 
-![sim_3456](../images/SIM_3456-552250351445-9_bis.jpg)
+![sim_3456](../images/SIM_3456-552250351445-9_bis.png)

@@ -394,7 +394,7 @@ owner: Tech
 status: approved
 version: 1.2
 review_date: "2026-10-02"
-review_period_months: 6
+review_period_months: 6 #6 is the default
 tags:
   - smartlogger
   - huawei
@@ -827,3 +827,11 @@ Si segueixes aquests patrons, la Knowledge Base serà útil tant per a usuaris n
 ## Fi de la demostració
 
 Si veus correctament totes les seccions anteriors (admonitions, Mermaid, tabs, checklists, snippets, codi, taules i diagrames), la instal·lació de MkDocs Material està funcionant correctament.
+
+
+
+----
+
+Etiquetes
+draft_warning
+review-warning

@@ -3,9 +3,16 @@
 {% block extrahead %}
   {{ super() }}
 
+  {% if page and page.meta and page.meta.status %}
+    <meta name="status" content="{{ page.meta.status | e }}">
+  {% endif %}
+
   {% if page and page.meta and page.meta.review_date %}
     <meta
       name="review_date"
       content="{{ page.meta.review_date }}">
+  {% endif %}
+  {% if page and page.meta and page.meta.review_period_months is defined %}
+    <meta name="review_period_months" content="{{ page.meta.review_period_months | e }}">
   {% endif %}
 {% endblock %}

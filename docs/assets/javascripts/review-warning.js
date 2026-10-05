@@ -8,12 +8,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const reviewDate = new Date(meta.content);
 
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(
-        sixMonthsAgo.getMonth() - 6
+    if (Number.isNaN(reviewDate.getTime())) return;
+
+    const periodMeta = document.querySelector(
+        'meta[name="review_period_months"]'
+    );
+    const configuredMonths = Number(periodMeta?.content);
+    const reviewPeriodMonths = Number.isInteger(configuredMonths) && configuredMonths > 0
+        ? configuredMonths
+        : 6;
+
+    const reviewCutoff = new Date();
+    reviewCutoff.setMonth(
+        reviewCutoff.getMonth() - reviewPeriodMonths
     );
 
-    if (reviewDate >= sixMonthsAgo) {
+    if (reviewDate >= reviewCutoff) {
         return;
     }
 
@@ -34,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </p>
         <p>
             Aquest document no s'ha revisat
-            durant els darrers 6 mesos.
+            durant ${reviewPeriodMonths === 1 ? "el darrer mes" : `els darrers ${reviewPeriodMonths} mesos`}.
         </p>
     `;
 
