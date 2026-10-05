@@ -65,7 +65,8 @@ nav:
   - Guia de la KB: index.md
 
   - 01 - Operacions:
-    - 0101: index.md
+      - Postgres:
+          - Configuració postgres_fdw: 01/Postgres/Configurar-postgres_fdw.md
 
   - 02 - Processos de negoci:
     - 0201: index.md
@@ -76,8 +77,6 @@ nav:
   - 04 - Servidors i Infraestructura:
       - edison:
           - GISCE gateway: 04/edison/gateway-gisce.md
-      - Postgres:
-          - Configuració postgres_fdw: 04/Postgres/Configurar-postgres_fdw.md
 
   - 05 - Seguretat:
     - 0501: index.md
