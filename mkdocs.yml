@@ -35,13 +35,6 @@ theme:
 plugins:
     - search
 
-    - git-revision-date-localized:
-        locale: ca
-        type: custom
-        custom_format: "%d/%m/%Y %H:%M"
-        enable_creation_date: false
-        #enable_git_follow: false
-
 markdown_extensions:
   - admonition # !!! note, !!! warning, !!! tip, etc.
   - pymdownx.emoji # :smile: :heart: :+1:
