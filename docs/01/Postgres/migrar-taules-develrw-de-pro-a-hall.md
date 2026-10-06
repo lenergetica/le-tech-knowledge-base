@@ -173,7 +173,7 @@ Procediment per migrar taules de l'esquema *develrw* de la BD de *Pro* a la BD d
     ```
 
 1. Copiem les dades d'una taula a l'altra (la PK ja ens dona integritat respecte a duplicats; crearem els índexs a la taula de *Hall* després de la còpia, per no penalitzar-la més).
-L'script `projectes/energetica_utils/copia_dades_pro2hall.sh` permet copiar les dades d'una taula a l'altra, mes a mes i amb comprovacions. A la capçalera de l'script s'explica com funciona.
+L'script `projectes/energetica_utils/copia_dades_pro2hall.sh` (a Hall) permet copiar les dades d'una taula a l'altra, mes a mes i amb comprovacions. A la capçalera de l'script s'explica com funciona.
 
 1. Un cop copiades les dades, cal crear els índexs que hem vist al DDL (el de PK no cal, i el de *timestamp* tampoc, perquè ja el crea *Timescale*):
 

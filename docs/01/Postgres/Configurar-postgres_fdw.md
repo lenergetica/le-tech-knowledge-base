@@ -73,8 +73,8 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     OPTIONS (host '192.168.24.3', dbname 'energetica', port '5432');
     ```
 
-    !!! note
-    En el cas de HALL, utilitzarem la VLAN que ens va crear GISCE i que dona visibilitat entre els nostres servidors (192.168.24.X). Per a més informació consulteu /etc/hosts a energetica@energetica-hall.
+    !!! note "Nota"
+        En el cas de HALL, utilitzarem la VLAN que ens va crear GISCE i que dona visibilitat entre els nostres servidors (192.168.24.X). Per a més informació consulteu /etc/hosts a energetica@energetica-hall.
 
 1. Donem permís al rol `energetica` per fer servir aquest servidor remot
 
@@ -115,19 +115,20 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
 1. Fem alguna prova. Aquesta query que consulta una taula de `public` a **HALL**, realment va a consultar aquesta taula a `public` de la **GISCE Producció**
 
     ```sql
-    SELECT * FROM public.giscedata_cups_ps where name = 'ES0031408648885001LS0F';
+    SELECT *
+    FROM public.giscedata_cups_ps
+    WHERE name = 'ES0031408648885001LS0F';
     ```
 
     O una prova de fer join d'una taula de `develrw` de **HALL** amb una de `public` de **GISCE Producció**:
 
-    ```cs
-    select gcp."name", gcp.direccio, ftrd.*
-    from develrw.fact_total_reclamacions_dashboard ftrd
-    left join public.giscedata_cups_ps gcp on ftrd.cups = gcp."name";
+    ```sql
+    SELECT gcp."name", gcp.direccio, ftrd.*
+    FROM develrw.fact_total_reclamacions_dashboard ftrd
+    LEFT JOIN public.giscedata_cups_ps gcp ON ftrd.cups = gcp."name";
     ```
 
-## Consideracions pel que fa a _hypertables_ TimescaleDB
-
-**_postgres\_fdw_** no “veu” els índexs de Timescale com si fossin locals: el que fa és enviar al servidor remot les parts de la consulta que es poden push down; per defecte, només les WHERE amb operadors i funcions built-in o d’extensions declarades com a extensions, i només si són IMMUTABLE. Si la condició es pot enviar al remot, és el servidor remot qui l’executa; si no, l’FDW recupera files i filtra localment.
-En la pràctica, això vol dir que si la taula de PRO és una hypertable de TimescaleDB i la query és una SELECT simple sobre una columna indexada, el filtre acostuma a executar-se al remot i, per tant, el servidor de PRO pot aprofitar els seus índexs i la seva partició per chunks. Timescale indica que les hypertables funcionen com taules PostgreSQL normals per a SELECT i que suporten índexs estàndard, però també té les seves pròpies limitacions: els índexs únics han d’incloure totes les columnes de partició, els UPDATE que mouen files entre particions/chunks no s’admeten, i els foreign keys de hypertable a hypertable no estan suportats.
-Per tant, la resposta curta és: sí, es pot fer i normalment funciona bé per a lectura, però la clau és que la consulta sigui “shippable” al remot. Si hi poses funcions no built-in, o expressions que l’FDW no pugui enviar, llavors perd pushdown i pot anar molt més lent. Això és una inferència directa del comportament documentat de postgres\_fdw i del fet que Timescale tracta les hypertables com a taules PostgreSQL estàndard per a SELECT.
+??? note "Consideracions pel que fa a _hypertables_ TimescaleDB"
+    **_postgres\_fdw_** no “veu” els índexs de Timescale com si fossin locals: el que fa és enviar al servidor remot les parts de la consulta que es poden push down; per defecte, només les WHERE amb operadors i funcions built-in o d’extensions declarades com a extensions, i només si són IMMUTABLE. Si la condició es pot enviar al remot, és el servidor remot qui l’executa; si no, l’FDW recupera files i filtra localment.
+    En la pràctica, això vol dir que si la taula de PRO és una hypertable de TimescaleDB i la query és una SELECT simple sobre una columna indexada, el filtre acostuma a executar-se al remot i, per tant, el servidor de PRO pot aprofitar els seus índexs i la seva partició per chunks. Timescale indica que les hypertables funcionen com taules PostgreSQL normals per a SELECT i que suporten índexs estàndard, però també té les seves pròpies limitacions: els índexs únics han d’incloure totes les columnes de partició, els UPDATE que mouen files entre particions/chunks no s’admeten, i els foreign keys de hypertable a hypertable no estan suportats.
+    Per tant, la resposta curta és: sí, es pot fer i normalment funciona bé per a lectura, però la clau és que la consulta sigui “shippable” al remot. Si hi poses funcions no built-in, o expressions que l’FDW no pugui enviar, llavors perd pushdown i pot anar molt més lent. Això és una inferència directa del comportament documentat de postgres\_fdw i del fet que Timescale tracta les hypertables com a taules PostgreSQL estàndard per a SELECT.
