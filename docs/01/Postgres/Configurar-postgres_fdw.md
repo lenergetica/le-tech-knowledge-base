@@ -1,7 +1,7 @@
 ---
 owner: L'Energetica Tech
 status: draft
-review_date: "2026-10-05"
+review_date: 2026-2-05
 review_period_months: 1
 tags:
     - postgresql
@@ -68,13 +68,13 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     * el port de connexió
 
     ```sql
-      CREATE SERVER energetica_pro
-      FOREIGN DATA WRAPPER postgres_fdw
-      OPTIONS (host '192.168.24.3', dbname 'energetica', port '5432');
+    CREATE SERVER energetica_pro
+    FOREIGN DATA WRAPPER postgres_fdw
+    OPTIONS (host '192.168.24.3', dbname 'energetica', port '5432');
     ```
 
     !!! note
-        En el cas de HALL, utilitzarem la VLAN que ens va crear GISCE i que dona visibilitat entre els nostres servidors (192.168.24.X). Per a més informació consulteu /etc/hosts a energetica@energetica-hall.
+    En el cas de HALL, utilitzarem la VLAN que ens va crear GISCE i que dona visibilitat entre els nostres servidors (192.168.24.X). Per a més informació consulteu /etc/hosts a energetica@energetica-hall.
 
 1. Donem permís al rol `energetica` per fer servir aquest servidor remot
 
