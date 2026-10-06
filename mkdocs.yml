@@ -58,8 +58,7 @@ markdown_extensions:
 extra_javascript:
     - https://unpkg.com/mermaid@10/dist/mermaid.min.js
     - assets/javascripts/mermaid-init.js
-    - assets/javascripts/review-warning.js # Banner de documents pendents de revisió
-    - assets/javascripts/status-warning.js # Banner de documents en construcció
+    - assets/javascripts/status-warning.js # Avisos segons l'estat i la data de revisió
 
 nav:
   - Guia de la KB: index.md
@@ -67,6 +66,7 @@ nav:
   - 01 - Operacions:
       - Postgres:
           - Configuració postgres_fdw: 01/Postgres/Configurar-postgres_fdw.md
+          - Migració de dades amb postgres_fdw: 01/Postgres/Migrar taules develrw de Pro a Hall.md
 
   - 02 - Processos de negoci:
     - 0201: index.md
