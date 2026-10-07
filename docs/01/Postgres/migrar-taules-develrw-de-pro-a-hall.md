@@ -15,9 +15,16 @@ tags:
     - GISCE
 ---
 
-# Migrar taules develrw de Pro a Hall
+# Configuració inicial FDW i còpia pilot d'una taula develrw
 
-Procediment per migrar taules de l'esquema *develrw* de la BD de *Pro* a la BD de *Hall*. Exemplificat amb la taula `develrw.apigisce_tgf1`.
+Referència de la configuració inicial `postgres_fdw` i de la còpia pilot de la taula `develrw.apigisce_tgf1` de Pro a Hall.
+
+!!! note "Situació inicial ja configurada"
+    La configuració general de `postgres_fdw` ja s'ha fet: a Hall hi ha *foreign tables* per consultar les taules de `public` i `develrw` de Pro. Aquesta guia registra la configuració inicial i la còpia pilot ja realitzada; no és el procediment per migrar cada ETL. Per al runbook que cal repetir, un cop per cada script, consulteu [Migrar scripts ETL de Pro a Hall](./migrar-scripts-etl-de-pro-a-hall.md).
+
+## Exemple tècnic de la còpia pilot (ja realitzada)
+
+Els passos següents documenten la còpia de `develrw.apigisce_tgf1` i serveixen de referència tècnica per a estructura, TimescaleDB, dades i índexs. La migració operativa de les taules dependents d'un ETL s'ha de fer seguint el runbook d'ETL enllaçat més amunt.
 
 1. Mirem primer les dimensions de la taula a copiar, per fer-nos-en una idea
 
@@ -83,7 +90,14 @@ Procediment per migrar taules de l'esquema *develrw* de la BD de *Pro* a la BD d
 
     El trigger és de *Timescale*, no caldrà crear-lo manualment a *Hall*.
 
-1. Creem la taula a *Hall* (amb la PK). **Els índexs els crearem més endavant. El trigger de Timescale NO farà falta.**
+1. A *Hall*, alliberem el nom de la taula local reanomenant la *foreign table* importada des de Pro. El prefix `_fdw_` la identifica com a referència remota:
+
+    ```sql
+    ALTER FOREIGN TABLE develrw.apigisce_tgf1
+        RENAME TO _fdw_apigisce_tgf1;
+    ```
+
+1. Creem la taula local a *Hall* amb el nom original i la clau primària. **Els índexs addicionals els crearem més endavant. El trigger intern de Timescale no cal recrear-lo manualment.**
 
     ```sql
     CREATE TABLE develrw.apigisce_tgf1 (
@@ -202,3 +216,5 @@ L'script `projectes/energetica_utils/copia_dades_pro2hall.sh` (a Hall) permet co
     apigisce_tgf1_pk           |CREATE UNIQUE INDEX apigisce_tgf1_pk ON develrw.apigisce_tgf1 USING btree ("timestamp", cups, type)                                                              |
     apigisce_tgf1_timestamp_idx|CREATE INDEX apigisce_tgf1_timestamp_idx ON develrw.apigisce_tgf1 USING btree ("timestamp" DESC)                                                                 |
     ```
+
+Per al procediment operatiu d'actualització de *foreign tables* i de migració dels ETL dependents, consulteu [Migrar scripts ETL de Pro a Hall](./migrar-scripts-etl-de-pro-a-hall.md). Aquesta guia de taules serveix de referència per a l'estructura, TimescaleDB, còpia de dades i índexs de la taula local a Hall.

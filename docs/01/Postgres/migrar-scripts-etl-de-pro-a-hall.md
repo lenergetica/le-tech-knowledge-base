@@ -17,15 +17,11 @@ Procediment per traslladar gradualment a Hall els ETL que ara s'executen a Pro, 
 
 ## Abast i prerequisits
 
-Aquest procediment parteix de la situació següent:
+La configuració inicial de `postgres_fdw` ja està feta: les taules de `public` i `develrw` de Pro estan importades a Hall com a *foreign tables*. Això permet que els ETL que encara s'executen a Pro continuïn funcionant inicialment a Hall sense canviar-ne les consultes, perquè les taules remotes són accessibles com si fossin locals.
 
-- Les taules dels esquemes `public` i `develrw` de Pro estan disponibles a Hall com a *foreign tables*.
-- Hall pot connectar-se a Pro i consultar les taules que encara no s'han migrat.
-- Es pot configurar també la connexió inversa, de Pro a Hall, per a les taules que ja s'hagin migrat.
+La guia [Configuració inicial FDW i còpia pilot](./migrar-taules-develrw-de-pro-a-hall.md) documenta aquesta configuració i la còpia pilot d'una taula. No cal repetir la configuració general de FDW per cada ETL. Aquest document és el procediment operatiu que sí que s'ha de repetir, una vegada per cada script.
 
-Abans de començar, inventarieu l'ETL (codi i versió, planificació, taules que llegeix o modifica i altres dependències), confirmeu una còpia de seguretat recuperable i comproveu que a Hall hi ha els rols, permisos, extensions, configuració i dependències necessaris. Definiu també com recuperar o reconciliar dades si la prova falla.
-
-Per configurar les connexions `postgres_fdw`, consulteu [Configurar postgres_fdw](./configurar-postgres_fdw.md). Per copiar l'estructura i les dades d'una taula `develrw` a Hall, consulteu [Migrar taules develrw de Pro a Hall](./migrar-taules-develrw-de-pro-a-hall.md).
+Abans de cada migració, inventarieu l'ETL (codi i versió, planificació, taules que llegeix o modifica i altres dependències), confirmeu que hi ha una còpia de seguretat recuperable i comproveu que Hall disposa dels rols, permisos, extensions, configuració i dependències necessaris. Definiu com recuperar o reconciliar dades si la prova falla. Per a la configuració de connexió inversa de Pro cap a Hall, consulteu [Configurar postgres_fdw](./configurar-postgres_fdw.md).
 
 ## Procediment per a cada script
 
@@ -35,7 +31,7 @@ Repetiu el procediment per a cada ETL. Si en depèn més d'una taula `develrw`, 
 flowchart TD
     A["Preparar la migració<br/>i triar la finestra"] --> B{"Queden taules<br/>per migrar?"}
     B -- "Sí" --> C["Migrar la taula a Hall<br/>i validar-la"]
-    C --> D["Redirigir a Hall la foreign table<br/>de Pro"]
+    C --> D["A Pro, fer que XXX apunti<br/>a la còpia de Hall"]
     D --> B
     B -- "No" --> E["Provar l'ETL"]
     E --> F{"Prova correcta?"}
@@ -54,17 +50,56 @@ La majoria d'ETL s'executen una vegada al dia, durant la nit, i duren poc. No ca
 
 Registreu les taules d'entrada i sortida, les dependències, els paràmetres i secrets, i els resultats esperats. Durant la còpia, eviteu escriptures concurrents a les taules afectades o definiu prèviament com capturareu i aplicareu els canvis posteriors. Anoteu valors de referència útils (per exemple, recompte de files i valors mínim/màxim) per comparar-los després.
 
-### 2. Migrar i validar les taules `develrw`
+### 2. Migrar les dependències d'aquest ETL
 
-Per a cada taula `develrw.XXX`:
+Feu aquests passos només per a les taules `develrw` que utilitza l'ETL actual. La idea és substituir a poc a poc, a mesura que migreu cada script, les *foreign tables* de Hall que apunten a Pro per taules locals de Hall. La resta de taules continua accessible des de Hall via FDW.
 
-1. A Hall, reanomeneu la *foreign table* existent `develrw.XXX` a `develrw._fdw_XXX`. Això allibera el nom perquè la taula local migrada el pugui ocupar.
-2. Creeu la taula local a Hall i copieu-hi les dades des de Pro seguint el procediment de [migració de taules](./migrar-taules-develrw-de-pro-a-hall.md). Valideu l'estructura, la clau primària, TimescaleDB si escau, les dades i els índexs.
-3. Un cop validada la còpia, a Pro reanomeneu la taula local original `develrw.XXX` a `develrw._XXX`.
-4. A Pro, creeu una *foreign table* anomenada `develrw.XXX` que apunti a la taula local `Hall.develrw.XXX`. Feu-ho amb el servidor, el *user mapping* i els permisos de connexió inversa configurats per a Pro.
-5. Reviseu `Hall.develrw._fdw_XXX`: després de reanomenar la taula original a Pro, la *foreign table* antiga pot continuar apuntant al nom remot anterior. Si s'ha de conservar per a consulta o reversió, actualitzeu-ne l'opció `table_name` perquè apunti a `develrw._XXX`; si ja no cal i s'ha verificat que cap procés la fa servir, retireu-la seguint el procediment operatiu aprovat.
+Per a cada taula `develrw.XXX` de què depèn:
 
-No elimineu les taules originals ni les *foreign tables* de reserva durant aquesta fase. El prefix `_` només identifica objectes antics; no és una còpia de seguretat.
+1. **A Hall**, reanomeneu la *foreign table* existent `develrw.XXX` a `develrw._fdw_XXX`. Això allibera el nom `develrw.XXX` per a la còpia local:
+
+    ```sql
+    ALTER FOREIGN TABLE develrw.XXX
+        RENAME TO _fdw_XXX;
+    ```
+
+2. **A Hall**, creeu la taula local `develrw.XXX` i copieu-hi les dades des de Pro seguint la referència tècnica de [còpia pilot i estructura de taula](./migrar-taules-develrw-de-pro-a-hall.md). Valideu l'estructura i les dades. Abans de continuar, comproveu que la còpia local és la que s'utilitzarà.
+
+3. **A Pro**, comproveu que el servidor `hall_server` existeix i que el rol actual pot fer-lo servir:
+
+    ```sql
+    SELECT srvname, srvowner::regrole, srvacl,
+           has_server_privilege(current_user, srvname, 'USAGE') AS can_use
+    FROM pg_foreign_server
+    WHERE srvname = 'hall_server';
+    ```
+
+    Si no hi ha cap fila o `can_use` és `false`, atureu-vos i configureu el servidor, el `USER MAPPING` i els permisos segons [Configurar postgres_fdw](./configurar-postgres_fdw.md).
+
+4. **A Pro**, quan la còpia de Hall estigui validada i la taula local no estigui en ús, reanomeneu l'original a `_old_XXX` i importeu la taula migrada des de Hall amb el nom original. Així, els consumidors que encara consultin Pro continuen trobant `develrw.XXX`:
+
+    ```sql
+    ALTER TABLE develrw.XXX
+        RENAME TO _old_XXX;
+
+    IMPORT FOREIGN SCHEMA develrw
+        LIMIT TO (XXX)
+        FROM SERVER hall_server
+        INTO develrw;
+    ```
+
+    Si l'ETL depèn de diverses taules, reanomeneu les originals a Pro amb prefix `_old_` i incloeu totes les taules migrades a `LIMIT TO`. Abans d'importar, confirmeu que els noms originals estan lliures.
+
+5. **A Hall**, si voleu conservar `_fdw_XXX` com a referència a la còpia antiga de Pro, canvieu-ne el destí remot a `_old_XXX`. Això evita que la FDW apunti de retorn a Hall:
+
+    ```sql
+    ALTER FOREIGN TABLE develrw._fdw_XXX
+        OPTIONS (SET table_name '_old_XXX');
+    ```
+
+    No elimineu les taules `_old_XXX` ni les `_fdw_XXX` fins que n'hàgiu comprovat les dependències i aprovat formalment la retirada.
+
+Repetiu aquests passos per a totes les taules de `develrw` que utilitza aquest ETL abans de provar-lo. Els noms `XXX`, `_fdw_XXX` i `_old_XXX` són placeholders: substituïu-los consistentment pel nom de cada taula. La guia de taules és una referència tècnica basada en la còpia pilot de `apigisce_tgf1`; no és el runbook per migrar cada ETL.
 
 ### 3. Provar i traslladar l'ETL
 
