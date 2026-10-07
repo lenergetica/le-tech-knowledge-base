@@ -72,12 +72,16 @@ Abans de canviar la planificació:
 
 1. Executeu l'ETL en mode de prova si en disposa; compareu sortides amb els valors de referència, reviseu logs i durada, i confirmeu que no hi ha efectes duplicats. Si escriu dades, verifiqueu que van a les taules previstes a Hall i que les operacions són compatibles amb `postgres_fdw`.
 2. Si la prova és correcta, instal·leu a Hall el codi, dependències, configuració i secrets necessaris. Assegureu-vos que les taules encara no migrades continuen accessibles mitjançant les *foreign tables*.
-3. Traieu o comenteu l'entrada de l'ETL al crontab de la màquina Pro i afegiu-la al crontab de Hall. Comproveu que l'horari i l'entorn són correctes i que el mateix ETL no queda programat als dos servidors alhora. Registreu el canvi i monitoritzeu la primera execució (logs, durada i resultats).
+3. Traieu o comenteu l'entrada de l'ETL del crontab de Pro. Per activar-la a Hall:
+   1. Modifiqueu el fitxer `crontab` del repositori [`lenergetica/hall-cron`](https://github.com/lenergetica/hall-cron), afegiu-hi l'ETL amb l'horari correcte i feu push a `main`.
+   2. A Dokploy, obriu el projecte `etl`, seleccioneu el servei `cron` i premeu **Deploy** perquè desplegui la darrera versió del repositori.
+   3. Obriu un terminal al contenidor del servei `cron` i executeu `crontab -l`. Comproveu que l'entrada de l'ETL hi apareix amb l'horari esperat.
+   4. Confirmeu que el mateix ETL no queda programat a Pro i Hall alhora. Registreu el canvi i monitoritzeu la primera execució (logs, durada i resultats).
 
 Si hi ha errors o diferències, no activeu execucions addicionals: atureu l'ETL, determineu si Hall ha escrit dades i apliqueu el pla de reversió/reconciliació abans de reactivar-lo a Pro.
 
 !!! note "Gestió dels ETL"
-    La gestió dels ETL es farà amb [Prefect](https://docs.prefect.io/). La documentació interna sobre com registrar, programar i operar els ETL amb Prefect encara està pendent; fins que estigui disponible, aquest procediment descriu el canvi de crontab entre Pro i Hall.
+    Actualment, la configuració de cron de Hall es manté al fitxer `crontab` del repositori [`lenergetica/hall-cron`](https://github.com/lenergetica/hall-cron) i s'aplica desplegant el servei `cron` del projecte `etl` a Dokploy. A futur, es preveu gestionar els ETL amb [Prefect](https://docs.prefect.io/); la documentació interna sobre com registrar, programar i operar-los amb Prefect encara està pendent.
 
 ## Després de migrar
 
