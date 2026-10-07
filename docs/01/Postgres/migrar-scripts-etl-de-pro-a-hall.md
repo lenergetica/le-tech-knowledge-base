@@ -13,7 +13,7 @@ tags:
 
 # Migrar scripts ETL de Pro a Hall
 
-Procediment per migrar gradualment, script a script, els processos ETL que actualment s'executen a Pro perquè s'executin a Hall. La migració es fa d'una en una i inclou les taules de `develrw` que cada script utilitza.
+Procediment per traslladar gradualment a Hall els ETL que ara s'executen a Pro, un script cada vegada, amb les taules `develrw` de què depenen.
 
 ## Abast i prerequisits
 
@@ -23,98 +23,71 @@ Aquest procediment parteix de la situació següent:
 - Hall pot connectar-se a Pro i consultar les taules que encara no s'han migrat.
 - Es pot configurar també la connexió inversa, de Pro a Hall, per a les taules que ja s'hagin migrat.
 
-Abans de començar:
-
-1. Inventarieu el script ETL, la seva planificació (cron, servei o eina d'orquestració), les taules que llegeix i les que modifica, i qualsevol altre procés que en depengui.
-2. Confirmeu que hi ha còpies de seguretat recuperables i una manera de tornar a executar o reconciliar el procés.
-3. Planifiqueu una finestra de migració. Atureu temporalment les execucions que puguin modificar les taules afectades mentre se'n copia i valida el contingut. Si no és possible aturar-les, definiu prèviament com es copiaran els canvis produïts durant la migració.
-4. Comproveu que els rols, permisos, extensions, fitxers de configuració, credencials i dependències del script també estan disponibles a Hall.
+Abans de començar, inventarieu l'ETL (codi i versió, planificació, taules que llegeix o modifica i altres dependències), confirmeu una còpia de seguretat recuperable i comproveu que a Hall hi ha els rols, permisos, extensions, configuració i dependències necessaris. Definiu també com recuperar o reconciliar dades si la prova falla.
 
 Per configurar les connexions `postgres_fdw`, consulteu [Configurar postgres_fdw](./configurar-postgres_fdw.md). Per copiar l'estructura i les dades d'una taula `develrw` a Hall, consulteu [Migrar taules develrw de Pro a Hall](./migrar-taules-develrw-de-pro-a-hall.md).
 
 ## Procediment per a cada script
 
-Repetiu aquests passos per a cada script ETL. Si el script depèn de diverses taules de `develrw`, migreu i valideu totes les taules necessàries abans de canviar l'execució del script.
+Repetiu el procediment per a cada ETL. Si en depèn més d'una taula `develrw`, migreu-les i valideu-les totes abans de traslladar-ne l'execució.
 
 ```mermaid
 flowchart TD
-    A["Inventariar un ETL i les seves dependències"] --> B["Aturar l'ETL i les escriptures sobre les taules afectades"]
-    B --> C["Fer còpia de seguretat i anotar l'estat inicial"]
-    C --> D{"Queden taules de develrw<br/>per migrar per a aquest ETL?"}
-    D -- "Sí: taula XXX" --> E["A Hall: reanomenar la foreign table<br/>develrw.XXX a develrw._fdw_XXX"]
-    E --> F["Copiar Pro.develrw.XXX<br/>a la taula local Hall.develrw.XXX"]
-    F --> G["Validar esquema, dades,<br/>hypertable i índexs"]
-    G --> H{"Validació correcta?"}
-    H -- "No" --> I["Aturar la migració i recuperar<br/>o reconciliar abans de continuar"]
-    I --> B
-    H -- "Sí" --> J["A Pro: reanomenar la taula local<br/>develrw.XXX a develrw._XXX"]
-    J --> K["A Pro: crear develrw.XXX com a<br/>foreign table cap a Hall.develrw.XXX"]
-    K --> L["Revisar la foreign table antiga<br/>Hall._fdw_XXX i el seu destí remot"]
-    L --> D
-    D -- "No" --> M["Provar l'ETL i comparar resultats<br/>amb l'execució de referència"]
-    M --> N{"Prova acceptada?"}
-    N -- "No" --> O["No canviar la planificació;<br/>diagnosticar i recuperar"]
-    N -- "Sí" --> P["Instal·lar/configurar l'ETL a Hall<br/>i canviar-ne la planificació"]
-    P --> Q["Monitorar execucions i validar<br/>els resultats a Hall"]
-    Q --> R{"Estable i acceptat?"}
-    R -- "No" --> S["Aturar l'ETL i aplicar el pla<br/>de reversió/reconciliació"]
-    R -- "Sí" --> T["Documentar el canvi i passar<br/>al següent ETL"]
+    A["Inventariar l'ETL, dependències<br/>i hora d'execució"] --> B["Programar el canvi fora de la seva execució;<br/>confirmar que no està en marxa"]
+    B --> C["Fer còpia de seguretat<br/>i registrar valors de referència"]
+    C --> D{"Queden taules de develrw<br/>per migrar?"}
+    D -- "Sí: XXX" --> E["A Hall: reanomenar la foreign table<br/>XXX a _fdw_XXX"]
+    E --> F["Copiar Pro.XXX a la taula local<br/>Hall.XXX i validar-la"]
+    F --> G{"Còpia vàlida?"}
+    G -- "No" --> H["Aturar-se; recuperar o reconciliar<br/>abans de continuar"]
+    G -- "Sí" --> I["A Pro: reanomenar la taula local<br/>XXX a _XXX"]
+    I --> J["A Pro: crear la foreign table XXX<br/>cap a Hall.XXX"]
+    J --> K["Revisar el destí de Hall._fdw_XXX"]
+    K --> D
+    D -- "No" --> L["Provar l'ETL i comparar resultats"]
+    L --> M{"Prova acceptada?"}
+    M -- "No" --> H
+    M -- "Sí" --> N["Desactivar l'ETL del crontab<br/>de Pro i activar-lo al de Hall"]
+    N --> O["Monitorar l'execució<br/>i validar-ne el resultat"]
+    O --> P{"Correcte i estable?"}
+    P -- "No" --> H
+    P -- "Sí" --> Q["Documentar el canvi<br/>i passar al següent ETL"]
 ```
 
-### 1. Inventariar i preparar
+### 1. Triar la finestra i preparar la prova
 
-Per al script seleccionat, registreu:
+La majoria d'ETL s'executen una vegada al dia, durant la nit, i duren poc. No cal mantenir-los aturats durant tota la migració: planifiqueu cada canvi fora de l'horari d'execució del script afectat i comproveu als logs o al planificador que l'execució ha acabat. Eviteu que comenci una execució nova mentre canvieu les taules; si cal, desactiveu temporalment només la planificació d'aquell ETL.
 
-- el nom i la ubicació del script, i la seva versió;
-- les taules d'origen i de destinació, i si s'hi fan lectures, insercions, actualitzacions o eliminacions;
-- les dependències indirectes (vistes, funcions, altres scripts i processos programats);
-- els paràmetres d'execució, secrets i permisos necessaris;
-- els resultats esperats i les comprovacions que permeten acceptar la migració.
+Registreu les taules d'entrada i sortida, les dependències, els paràmetres i secrets, i els resultats esperats. Durant la còpia, eviteu escriptures concurrents a les taules afectades o definiu prèviament com capturareu i aplicareu els canvis posteriors. Anoteu valors de referència útils (per exemple, recompte de files i valors mínim/màxim) per comparar-los després.
 
-Atureu l'ETL i qualsevol altre procés que pugui escriure a les taules afectades. Feu una còpia de seguretat i anoteu, com a mínim, el recompte de files, els valors mínim i màxim de les columnes rellevants i l'hora de l'última execució correcta.
-
-### 2. Migrar cada taula `develrw` necessària
+### 2. Migrar i validar les taules `develrw`
 
 Per a cada taula `develrw.XXX`:
 
 1. A Hall, reanomeneu la *foreign table* existent `develrw.XXX` a `develrw._fdw_XXX`. Això allibera el nom perquè la taula local migrada el pugui ocupar.
-2. Creeu la taula local a Hall i copieu-hi les dades des de Pro seguint el procediment de [migració de taules](./migrar-taules-develrw-de-pro-a-hall.md). Valideu-ne l'estructura, la clau primària, la configuració de TimescaleDB si escau, les dades i els índexs.
+2. Creeu la taula local a Hall i copieu-hi les dades des de Pro seguint el procediment de [migració de taules](./migrar-taules-develrw-de-pro-a-hall.md). Valideu l'estructura, la clau primària, TimescaleDB si escau, les dades i els índexs.
 3. Un cop validada la còpia, a Pro reanomeneu la taula local original `develrw.XXX` a `develrw._XXX`.
 4. A Pro, creeu una *foreign table* anomenada `develrw.XXX` que apunti a la taula local `Hall.develrw.XXX`. Feu-ho amb el servidor, el *user mapping* i els permisos de connexió inversa configurats per a Pro.
 5. Reviseu `Hall.develrw._fdw_XXX`: després de reanomenar la taula original a Pro, la *foreign table* antiga pot continuar apuntant al nom remot anterior. Si s'ha de conservar per a consulta o reversió, actualitzeu-ne l'opció `table_name` perquè apunti a `develrw._XXX`; si ja no cal i s'ha verificat que cap procés la fa servir, retireu-la seguint el procediment operatiu aprovat.
 
-No elimineu les taules originals ni les *foreign tables* de reserva durant aquesta fase. El prefix `_` només les identifica com a objectes antics; no és una còpia de seguretat.
+No elimineu les taules originals ni les *foreign tables* de reserva durant aquesta fase. El prefix `_` només identifica objectes antics; no és una còpia de seguretat.
 
-### 3. Provar l'ETL abans del canvi
+### 3. Provar i traslladar l'ETL
 
-Amb l'ETL encara aturat o executat en mode de prova:
+Abans de canviar la planificació:
 
-1. Confirmeu que les consultes a `develrw.XXX` des de Pro ara arriben a la taula local de Hall.
-2. Executeu les validacions funcionals i compareu els resultats amb els valors de referència. Comproveu també els logs, els temps d'execució i que no s'han produït efectes duplicats.
-3. Si l'ETL escriu dades, confirmeu explícitament que les escriptures arriben a les taules previstes a Hall i que les operacions que utilitza són compatibles amb `postgres_fdw`.
-4. No continueu si hi ha diferències no explicades. Manteniu l'execució original i corregiu les dades o la configuració abans de repetir la prova.
+1. Executeu l'ETL en mode de prova si en disposa; compareu sortides amb els valors de referència, reviseu logs i durada, i confirmeu que no hi ha efectes duplicats. Si escriu dades, verifiqueu que van a les taules previstes a Hall i que les operacions són compatibles amb `postgres_fdw`.
+2. Si la prova és correcta, instal·leu a Hall el codi, dependències, configuració i secrets necessaris. Assegureu-vos que les taules encara no migrades continuen accessibles mitjançant les *foreign tables*.
+3. Traieu o comenteu l'entrada de l'ETL al crontab de la màquina Pro i afegiu-la al crontab de Hall. Comproveu que l'horari i l'entorn són correctes i que el mateix ETL no queda programat als dos servidors alhora. Registreu el canvi i monitoritzeu la primera execució (logs, durada i resultats).
 
-### 4. Traslladar l'execució a Hall
+Si hi ha errors o diferències, no activeu execucions addicionals: atureu l'ETL, determineu si Hall ha escrit dades i apliqueu el pla de reversió/reconciliació abans de reactivar-lo a Pro.
 
-Quan les taules i la prova estiguin acceptades:
+!!! note "Gestió dels ETL"
+    La gestió dels ETL es farà amb [Prefect](https://docs.prefect.io/). La documentació interna sobre com registrar, programar i operar els ETL amb Prefect encara està pendent; fins que estigui disponible, aquest procediment descriu el canvi de crontab entre Pro i Hall.
 
-1. Instal·leu a Hall el mateix codi ETL revisat i les seves dependències. Configureu-hi els paràmetres i secrets de manera segura; no copieu credencials a la documentació ni al repositori.
-2. Comproveu que les taules `public` i `develrw` no migrades encara són accessibles des de Hall mitjançant les *foreign tables* existents.
-3. Canvieu la planificació perquè el script s'executi a Hall. Eviteu que el mateix ETL quedi actiu simultàniament a Pro i a Hall.
-4. Executeu-lo i monitoritzeu logs, durada, recompte de registres i resultats funcionals. Registreu el moment del canvi i qui l'ha validat.
+## Després de migrar
 
-Si la validació falla, atureu noves execucions i seguiu el pla de reversió acordat. Abans de reactivar l'ETL a Pro, determineu si Hall ha escrit dades i com reconciliar-les; tornar a canviar la planificació sense reconciliar pot causar pèrdua o duplicació de dades.
-
-## Tancament de cada migració
-
-Després d'un període de monitoratge acordat:
-
-- confirmeu que el procés només s'executa a Hall i que les sortides són correctes;
-- actualitzeu l'inventari amb les taules migrades, l'estat de les antigues i les dependències pendents;
-- conserveu les taules originals i les *foreign tables* de reserva fins que s'hagi aprovat formalment retirar-les i hi hagi una còpia recuperable;
-- passeu al següent ETL i repetiu el procediment.
-
-Quan tots els ETL s'hagin migrat, investigueu qualsevol taula de `develrw` encara activa a Pro o qualsevol *foreign table* a Hall que no s'hagi classificat. No elimineu tot l'esquema `develrw` de Pro només perquè els ETL coneguts funcionin a Hall: confirmeu abans que cap altre procés, usuari o aplicació en depèn.
+Documenteu l'estat de l'ETL i les taules antigues, i conserveu les taules originals i *foreign tables* de reserva fins que s'hagi validat el funcionament a Hall i s'aprovi formalment retirar-les. En acabar tots els ETL, investigueu qualsevol taula o dependència encara activa a Pro; no elimineu tot l'esquema `develrw` sense confirmar que cap altre procés, usuari o aplicació en depèn.
 
 !!! warning "Ubicació de l'script de còpia"
     El procediment de migració de taules fa referència a `projectes/energetica_utils/copia_dades_pro2hall.sh`, que no forma part d'aquest repositori. Confirmeu-ne la ubicació canònica, la versió i la capçalera d'ús abans d'executar-lo.
