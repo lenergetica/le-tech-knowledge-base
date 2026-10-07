@@ -33,25 +33,19 @@ Repetiu el procediment per a cada ETL. Si en depèn més d'una taula `develrw`, 
 
 ```mermaid
 flowchart TD
-    A["Inventariar l'ETL, dependències<br/>i hora d'execució"] --> B["Programar el canvi fora de la seva execució;<br/>confirmar que no està en marxa"]
-    B --> C["Fer còpia de seguretat<br/>i registrar valors de referència"]
-    C --> D{"Queden taules de develrw<br/>per migrar?"}
-    D -- "Sí: XXX" --> E["A Hall: reanomenar la foreign table<br/>XXX a _fdw_XXX"]
-    E --> F["Copiar Pro.XXX a la taula local<br/>Hall.XXX i validar-la"]
-    F --> G{"Còpia vàlida?"}
-    G -- "No" --> H["Aturar-se; recuperar o reconciliar<br/>abans de continuar"]
-    G -- "Sí" --> I["A Pro: reanomenar la taula local<br/>XXX a _XXX"]
-    I --> J["A Pro: crear la foreign table XXX<br/>cap a Hall.XXX"]
-    J --> K["Revisar el destí de Hall._fdw_XXX"]
-    K --> D
-    D -- "No" --> L["Provar l'ETL i comparar resultats"]
-    L --> M{"Prova acceptada?"}
-    M -- "No" --> H
-    M -- "Sí" --> N["Desactivar l'ETL del crontab<br/>de Pro i activar-lo al de Hall"]
-    N --> O["Monitorar l'execució<br/>i validar-ne el resultat"]
-    O --> P{"Correcte i estable?"}
-    P -- "No" --> H
-    P -- "Sí" --> Q["Documentar el canvi<br/>i passar al següent ETL"]
+    A["Preparar la migració<br/>i triar la finestra"] --> B{"Queden taules<br/>per migrar?"}
+    B -- "Sí" --> C["Migrar la taula a Hall<br/>i validar-la"]
+    C --> D["Redirigir a Hall la foreign table<br/>de Pro"]
+    D --> B
+    B -- "No" --> E["Provar l'ETL"]
+    E --> F{"Prova correcta?"}
+    F -- "No" --> G["Corregir o recuperar;<br/>tornar a provar"]
+    G --> E
+    F -- "Sí" --> H["Desactivar el crontab a Pro<br/>i activar-lo a Hall"]
+    H --> I["Monitoritzar i validar<br/>l'execució a Hall"]
+    I --> J{"Resultat correcte?"}
+    J -- "No" --> K["Aturar i aplicar el pla<br/>de reversió"]
+    J -- "Sí" --> L["Documentar i passar<br/>al següent ETL"]
 ```
 
 ### 1. Triar la finestra i preparar la prova
