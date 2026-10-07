@@ -19,9 +19,9 @@ Procediment per traslladar gradualment a Hall els ETL que ara s'executen a Pro, 
 
 La configuració inicial de `postgres_fdw` ja està feta: les taules de `public` i `develrw` de Pro estan importades a Hall com a *foreign tables*. Això permet que els ETL que encara s'executen a Pro continuïn funcionant inicialment a Hall sense canviar-ne les consultes, perquè les taules remotes són accessibles com si fossin locals.
 
-La guia [Configuració inicial FDW i còpia pilot](./migrar-taules-develrw-de-pro-a-hall.md) documenta aquesta configuració i la còpia pilot d'una taula. No cal repetir la configuració general de FDW per cada ETL. Aquest document és el procediment operatiu que sí que s'ha de repetir, una vegada per cada script.
+La guia [Configuració inicial FDW i còpia pilot](migrar-taules-develrw-de-pro-a-hall.md) documenta aquesta configuració i la còpia pilot d'una taula. No cal repetir la configuració general de FDW per cada ETL. Aquest document és el procediment operatiu que sí que s'ha de repetir, una vegada per cada script.
 
-Abans de cada migració, inventarieu l'ETL (codi i versió, planificació, taules que llegeix o modifica i altres dependències), confirmeu que hi ha una còpia de seguretat recuperable i comproveu que Hall disposa dels rols, permisos, extensions, configuració i dependències necessaris. Definiu com recuperar o reconciliar dades si la prova falla. Per a la configuració de connexió inversa de Pro cap a Hall, consulteu [Configurar postgres_fdw](./configurar-postgres_fdw.md).
+Abans de cada migració, inventarieu l'ETL (codi i versió, planificació, taules que llegeix o modifica i altres dependències), confirmeu que hi ha una còpia de seguretat recuperable i comproveu que Hall disposa dels rols, permisos, extensions, configuració i dependències necessaris. Definiu com recuperar o reconciliar dades si la prova falla. Per a la configuració de connexió inversa de Pro cap a Hall, consulteu [Configurar postgres_fdw](configurar-postgres_fdw.md).
 
 ## Procediment per a cada script
 
@@ -63,7 +63,7 @@ Per a cada taula `develrw.XXX` de què depèn:
         RENAME TO _fdw_XXX;
     ```
 
-2. **A Hall**, creeu la taula local `develrw.XXX` i copieu-hi les dades des de Pro seguint la referència tècnica de [còpia pilot i estructura de taula](./migrar-taules-develrw-de-pro-a-hall.md). Valideu l'estructura i les dades. Abans de continuar, comproveu que la còpia local és la que s'utilitzarà.
+2. **A Hall**, creeu la taula local `develrw.XXX` i copieu-hi les dades des de Pro seguint la referència tècnica de [còpia pilot i estructura de taula](migrar-taules-develrw-de-pro-a-hall.md). Valideu l'estructura i les dades. Abans de continuar, comproveu que la còpia local és la que s'utilitzarà.
 
 3. **A Pro**, comproveu que el servidor `hall_server` existeix i que el rol actual pot fer-lo servir:
 
@@ -74,7 +74,7 @@ Per a cada taula `develrw.XXX` de què depèn:
     WHERE srvname = 'hall_server';
     ```
 
-    Si no hi ha cap fila o `can_use` és `false`, atureu-vos i configureu el servidor, el `USER MAPPING` i els permisos segons [Configurar postgres_fdw](./configurar-postgres_fdw.md).
+    Si no hi ha cap fila o `can_use` és `false`, atureu-vos i configureu el servidor, el `USER MAPPING` i els permisos segons [Configurar postgres_fdw](configurar-postgres_fdw.md).
 
 4. **A Pro**, quan la còpia de Hall estigui validada i la taula local no estigui en ús, reanomeneu l'original a `_old_XXX` i importeu la taula migrada des de Hall amb el nom original. Així, els consumidors que encara consultin Pro continuen trobant `develrw.XXX`:
 

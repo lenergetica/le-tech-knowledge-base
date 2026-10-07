@@ -65,9 +65,9 @@ nav:
 
   - 01 - Operacions:
       - Postgres:
-          - Configurar postgres_fdw: 01/postgres/configurar-postgres_fdw.md
-          - Migrar taules GISCE de Pro a Hall: 01/postgres/migrar-taules-develrw-de-pro-a-hall.md
-          - Migrar scripts ETL de Pro a Hall: 01/postgres/migrar-scripts-etl-de-pro-a-hall.md
+          - Configurar postgres_fdw: 01/postgres_/configurar-postgres_fdw.md
+          - Configuració FDW inicial i còpia pilot: 01/postgres_/migrar-taules-develrw-de-pro-a-hall.md
+          - Migrar scripts ETL de Pro a Hall: 01/postgres_/migrar-scripts-etl-de-pro-a-hall.md
 
   - 02 - Processos de negoci:
     - 0201: index.md

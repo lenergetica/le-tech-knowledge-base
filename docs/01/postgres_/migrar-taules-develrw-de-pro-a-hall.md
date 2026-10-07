@@ -20,7 +20,7 @@ tags:
 Referència de la configuració inicial `postgres_fdw` i de la còpia pilot de la taula `develrw.apigisce_tgf1` de Pro a Hall.
 
 !!! note "Situació inicial ja configurada"
-    La configuració general de `postgres_fdw` ja s'ha fet: a Hall hi ha *foreign tables* per consultar les taules de `public` i `develrw` de Pro. Aquesta guia registra la configuració inicial i la còpia pilot ja realitzada; no és el procediment per migrar cada ETL. Per al runbook que cal repetir, un cop per cada script, consulteu [Migrar scripts ETL de Pro a Hall](./migrar-scripts-etl-de-pro-a-hall.md).
+    La configuració general de `postgres_fdw` ja s'ha fet: a Hall hi ha *foreign tables* per consultar les taules de `public` i `develrw` de Pro. Aquesta guia registra la configuració inicial i la còpia pilot ja realitzada; no és el procediment per migrar cada ETL. Per al runbook que cal repetir, un cop per cada script, consulteu [Migrar scripts ETL de Pro a Hall](migrar-scripts-etl-de-pro-a-hall.md).
 
 ## Exemple tècnic de la còpia pilot (ja realitzada)
 
@@ -217,4 +217,4 @@ L'script `projectes/energetica_utils/copia_dades_pro2hall.sh` (a Hall) permet co
     apigisce_tgf1_timestamp_idx|CREATE INDEX apigisce_tgf1_timestamp_idx ON develrw.apigisce_tgf1 USING btree ("timestamp" DESC)                                                                 |
     ```
 
-Per al procediment operatiu d'actualització de *foreign tables* i de migració dels ETL dependents, consulteu [Migrar scripts ETL de Pro a Hall](./migrar-scripts-etl-de-pro-a-hall.md). Aquesta guia de taules serveix de referència per a l'estructura, TimescaleDB, còpia de dades i índexs de la taula local a Hall.
+Per al procediment operatiu d'actualització de *foreign tables* i de migració dels ETL dependents, consulteu [Migrar scripts ETL de Pro a Hall](migrar-scripts-etl-de-pro-a-hall.md). Aquesta guia de taules serveix de referència per a l'estructura, TimescaleDB, còpia de dades i índexs de la taula local a Hall.
