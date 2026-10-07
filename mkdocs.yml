@@ -45,7 +45,7 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: pymdownx.superfences.fence_code_format
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.snippets # Reutilització de contingut entre fitxers
   - pymdownx.tabbed # Permet pestanyes dins del contingut (=== "PowerShell", === "Bash")
   - tables # Taules Markdown

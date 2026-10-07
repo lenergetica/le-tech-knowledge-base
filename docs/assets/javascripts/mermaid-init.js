@@ -1,10 +1,13 @@
 document$.subscribe(() => {
   mermaid.initialize({
-    startOnLoad: true,
+    startOnLoad: false,
     securityLevel: "loose",
     theme: "default",
     flowchart: {
       curve: "basis"
     }
+  });
+  mermaid.run({
+    querySelector: ".mermaid"
   });
 });
