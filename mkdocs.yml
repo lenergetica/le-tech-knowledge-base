@@ -68,6 +68,7 @@ nav:
           - Configurar postgres_fdw: 01/postgres/configurar-postgres_fdw.md
           - Configuració FDW inicial i còpia pilot: 01/postgres/migrar-taules-develrw-de-pro-a-hall.md
           - Migrar scripts ETL de Pro a Hall: 01/postgres/migrar-scripts-etl-de-pro-a-hall.md
+          - Operació Barman Hall: 01/postgres/operacio-barman-hall.md
 
   - 02 - Processos de negoci:
     - 0201: index.md
