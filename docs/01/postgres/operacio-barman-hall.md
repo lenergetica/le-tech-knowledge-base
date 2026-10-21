@@ -1,7 +1,7 @@
 ---
 owner: L'Energetica Tech
 status: draft
-review_date: 2026-10-20
+review_date: 2026-10-21
 review_period_months: 1
 tags:
     - postgresql
@@ -17,6 +17,7 @@ tags:
 Aquest document descriu com aturar i reprendre les còpies del clúster PostgreSQL de Hall.
 
 !!! warning "Còpies físiques"
+
     Barman fa còpies **físiques de tot el clúster PostgreSQL**. Per tant, la còpia inclou totes les bases de dades de la instància, no només `energetica`.
 
 ## Dades de l'entorn
@@ -188,6 +189,6 @@ La segona ordre és destructiva: elimina les còpies físiques, els WAL i el cat
 La còpia gran de Hall va fallar escrivint directament al CIFS amb un error `fsync` (`Bad file
 descriptor`), acompanyat al servidor de missatges `CIFS: VFS: No writable handle in writepages`.
 
-Abans de reprendre còpies grans, cal adoptar emmagatzematge local fiable per a Barman (per exemple,
-un disc local ext4/XFS) i replicar després les còpies completes cap al CIFS. La compressió pot
-reduir trànsit i espai, però no resol aquest error de durabilitat del muntatge CIFS.
+Les còpies es desen ara al disc USB local ext4/XFS. Més endavant es podran replicar còpies
+completes cap al CIFS. La compressió pot reduir trànsit i espai, però no resol l'error de
+durabilitat del muntatge CIFS.
