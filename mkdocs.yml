@@ -33,7 +33,7 @@ theme:
     - toc.follow # TOC segueix l'scroll
 
 plugins:
-    - search
+  - search
 
 markdown_extensions:
   - admonition # !!! note, !!! warning, !!! tip, etc.
@@ -56,14 +56,16 @@ markdown_extensions:
       custom_checkbox: true
 
 extra_javascript:
-    - https://unpkg.com/mermaid@10/dist/mermaid.min.js
-    - assets/javascripts/mermaid-init.js
-    - assets/javascripts/status-warning.js # Avisos segons l'estat i la data de revisió
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - assets/javascripts/mermaid-init.js
+  - assets/javascripts/status-warning.js # Avisos segons l'estat i la data de revisió
 
 nav:
   - Guia de la KB: index.md
 
   - 01 - Operacions:
+      - Certificats:
+          - Renovar certificat SSL Edison: 01/certificats/renovar-certificat-ssl-edison.md
       - Postgres:
           - Configurar postgres_fdw: 01/postgres/configurar-postgres_fdw.md
           - Configuració FDW inicial i còpia pilot: 01/postgres/migrar-taules-develrw-de-pro-a-hall.md
@@ -71,38 +73,38 @@ nav:
           - Operació Barman Hall: 01/postgres/operacio-barman-hall.md
 
   - 02 - Processos de negoci:
-    - 0201: index.md
+      - 0201: index.md
 
   - 03 - Dades i analítica:
-    - Projecte: index.md
+      - Projecte: index.md
 
   - 04 - Servidors i Infraestructura:
       - edison:
           - GISCE gateway: 04/edison/gateway-gisce.md
 
   - 05 - Seguretat:
-    - 0501: index.md
+      - 0501: index.md
 
   - 06 - Projectes:
-    - 0601: index.md
+      - 0601: index.md
 
   - 07 - Desenvolupament:
-    - 0701: index.md
+      - 0701: index.md
 
   - 08 - Documentació:
-    - 0801: index.md
+      - 0801: index.md
 
   - 09 - Formació:
-    - 0901: index.md
+      - 0901: index.md
 
   - 10 - Telecomunicacions:
-    - Plantes:
-      - Cardedeu: telecom/cardedeu.md
-    - Components:
-      - SmartLogger: ot/smartlogger.md
+      - Plantes:
+          - Cardedeu: telecom/cardedeu.md
+      - Components:
+          - SmartLogger: ot/smartlogger.md
 
   - 99 - Altres:
-    - 9901: index.md
+      - 9901: index.md
 
   - contribute:
-    - Contribuir a la KB: contribute/contribute.md
+      - Contribuir a la KB: contribute/contribute.md
