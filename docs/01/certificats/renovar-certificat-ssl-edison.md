@@ -14,39 +14,7 @@ tags:
 
 # Certificats
 
-
-# Certificats SSL/TLS
-
-# Propòsit
-Inventari dels certificats SSL/TLS de l'organització, amb informació de caducitat, ubicació i mecanismes de renovació.
-
-# Inventari de certificats
-
-| Subject Common Name | Subject Organization | Subject Alternative Name | Issuer Common Name | Issuer Organization | Not Before | Not After | Vigència | Proveïdor |
-| ---| ---| ---| ---| ---| ---| ---| ---| --- |
-| [lenergetica.cat](http://lenergetica.cat) | \- | [lenergetica.cat](http://lenergetica.cat) | E8 | Let's Encrypt | 25/02/2026 | 26/05/2026 | 90 | Utrans |
-| [area-usuari.lenergetica.cat](http://area-usuari.lenergetica.cat) | Generalitat de Catalunya | [area-usuari.lenergetica.cat](http://area-usuari.lenergetica.cat)<br>[www.area-usuari.lenergetica.cat](http://www.area-usuari.lenergetica.cat) | Sectigo Public Server Authentication CA OV R36 | Sectigo Limited | 17/03/2026 | 02/10/2026 | 199 | GISCE |
-| [talent.lenergetica.cat](http://talent.lenergetica.cat) | \- | [talent.lenergetica.cat](http://talent.lenergetica.cat) | E8 | Let's Encrypt | 13/03/2026 | 11/06/2026 | 90 | Utrans |
-| [econnecta.cat](http://econnecta.cat) |  |  |  |  |  |  |  | Pendent |
-
-# Ubicació dels certificats
-Els certificats es guarden al Keepass a "Certificats SSL/TLS"
-# Sistema d'alertes
-Al calendari de [tecnologia@lenergetica.cat](mailto:tecnologia@lenergetica.cat) hi ha els recordatoris de caducitat (avís una setmana abans) perquè n'estiguem al cas. Amb cada renovació, cal afegir els nous recordatoris al calendari.
-# Procés de renovació
-Els certificats es generen d'ofici per part de:
-
-Operació dels Sistemes d’Identificació Digital
-Àrea d'Operacions de la Seguretat
-Telf. 677 034 158 | 699 44 98 57
-[identitat.digital@ciberseguretat.cat](mailto:identitat.digital@ciberseguretat.cat)
-
-Són enviats a en Marc Llucià del CTTI, que els fa arribar per correu a la Randa (arxius i clau per separat).
-## Proveïdor GISCE
-Es deixen els arxius del certificat al servidor energetica-erp a la carpeta `/home/energetica` i se'ls avisa.
-
 # Certificats SSL/TLS propis
-
 
 # Propòsit
 Com generem i renovem els certificats propis (CA Root LEnergetica).
@@ -108,7 +76,7 @@ Ara caldria:
 *   ~~Eliminar-la del servidor.~~
 *   Desplegar la clau pública "lenergetica-ca.crt" als ordinadors Windows pertinents.
 # Com es genera un certificat de servidor
-Quan s'ha de generar (per primer cop o perquè ha caducat) un certificat de servidor, cal que recupereu la clau privada CA Root de LEnergetica des del lloc segur _offline, c_ap al servidor, a `/srv/infra/nginx/ca`
+Quan s'ha de generar (per primer cop o perquè ha caducat) un certificat de servidor, cal que recupereu la clau privada CA Root de LEnergetica des del lloc segur *offline* cap al servidor, a `/srv/infra/nginx/ca`
 
 Cal disposar d'un arxiu amb la informació del certificat que volem generar `edison-server.cnf`:
 
@@ -193,23 +161,27 @@ Verifiqueu les dates:
 $ openssl x509 -enddate -noout -in edison-server.crt
 ```
 
-Actualitzar els certificats a nginx:
+## Actualitzar els certificats a Dokploy
+
+Cal anar a Dokploy, a Certificates, i editar el certificat que hem renovat.
+
+- Copiem el contingut del fitxer `edison-server.crt` a _Certificate Data_.
+- Copiem el contingut del fitxer `edison-server.key` a _Private Key_.
+
+Fem _Update_.
+
+Un cop fet això, cal reiniciar el servei de Traefik al servidor (Edison):
 
 ```bash
-$ sudo rm /srv/infra/nginx/ssl/cert.crt /srv/infra/nginx/ssl/cert.key
-$ sudo cp /srv/infra/nginx/ca/edison-server.crt /srv/infra/nginx/ssl/cert.crt
-$ sudo cp /srv/infra/nginx/ca/edison-server.key /srv/infra/nginx/ssl/cert.key
-```
+# Comprovem que el servei existeix
+$ docker service ls | grep -i traefik
 
-Reinicieu nginx perquè agafi el nou certificat:
-
-```bash
-$ cd /srv/infra/nginx
-$ docker compose restart nginx
+# Reiniciem el servei
+$ docker restart dokploy-traefik
 ```
 
 Ara caldria:
-*   Esborrar `lenergetica-ca.key` del servidor (ja està desada offline).
+*   Esborrar `lenergetica-ca.key` del servidor allà on l'hem generat (ja està desada offline).
 *   Actualitzar `lenergetica-ca.srl` al repositori offline, per no perdre la sèrie de generacions
 
 # Com s'instal·la manualment el certificat CA Root LEnergetica a Windows
