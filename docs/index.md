@@ -1,9 +1,21 @@
 ---
 title: Guia de referència de Markdown i Material for MkDocs
+author: José Antonio Arias
 owner: L'Energetica Tech
 status: actiu
+version: 1.3
 review_date: "2026-10-02"
-review_period_months: 6
+review_period_months: 6 #6 is the default
+tags:
+  - KB
+  - MkDocs
+  - Zensical
+  - Markdown
+  - Material for MkDocs
+references:
+  - https://zensical.org/docs/studio/get-started/quickstart/
+  - https://zensical.org/upcoming-changes/#reserve-studio-pro
+created: "2026-09-01"
 ---
 
 # Guia de referència de Markdown i Material for MkDocs
@@ -228,6 +240,9 @@ Material for MkDocs afegeix elements visuals i estructurals que milloren la nave
 ### 4.1 Admonicions
 
 ```md
+!!! info
+    Aquesta és una nota informativa.
+
 !!! note
     Aquesta és una nota informativa.
 
@@ -239,6 +254,9 @@ Material for MkDocs afegeix elements visuals i estructurals que milloren la nave
 ```
 
 Resultat:
+
+!!! info
+    Aquesta és una nota informativa.
 
 !!! note
     Aquesta és una nota informativa.
@@ -255,6 +273,11 @@ També podeu donar un títol explícit:
 !!! warning "Atenció"
     Els canvis en producció han de passar per Pull Request.
 ```
+
+Resultat:
+
+!!! warning "Atenció"
+    Els canvis en producció han de passar per Pull Request.
 
 ### 4.2 Blocs desplegables
 
@@ -391,19 +414,19 @@ Cada fitxer pot incloure metadades a l'inici en format YAML. Aquestes dades ajud
 title: Configuració SmartLogger
 author: José Antonio Arias
 owner: Tech
-status: approved
-version: 1.2
+status: actiu
+version: 1.3
 review_date: "2026-10-02"
 review_period_months: 6 #6 is the default
 tags:
   - smartlogger
   - huawei
   - ot
-site: Cardedeu
+references:
+  - https://zensical.org/docs/studio/get-started/quickstart/
+  - https://zensical.org/upcoming-changes/#reserve-studio-pro
 created: "2026-09-01"
 ---
-
-# Configuració SmartLogger
 ```
 
 ### Camps recomanats
@@ -539,46 +562,28 @@ Taules, avisos i diagrames són útils, però no han d'ofegar el contingut. L'ob
 
 ---
 
-## 9. Plantilla mínima de document
+## 9. Metadades
 
 Podeu partir d'aquesta plantilla per crear documents nous.
 
 ```yaml
----
-title: Nom del document
-author: Nom de l'autor
-owner: Equip responsable
-status: draft
-version: 1.0
+title: Guia de referència de Markdown i Material for MkDocs
+author: José Antonio Arias
+owner: L'Energetica Tech
+status: actiu
+version: 1.3
 review_date: "2026-10-02"
-review_period_months: 6
+review_period_months: 6 #6 is the default
 tags:
-  - documentació
-  - guia
-site: Cardedeu
----
-
-# Nom del document
-
-## Objectiu
-
-Explica què cobreix aquest document.
-
-## Context
-
-Quin és el context i quan s'ha d'utilitzar.
-
-## Procediment
-
-1. Primer pas
-2. Segon pas
-3. Tercer pas
-
-## Consideracions
-
-- Punts importants
-- Dependències
-- Riscos o advertències
+  - KB
+  - MkDocs
+  - Zensical
+  - Markdown
+  - Material for MkDocs
+references:
+  - https://zensical.org/docs/studio/get-started/quickstart/
+  - https://zensical.org/upcoming-changes/#reserve-studio-pro
+created: "2026-09-01"
 ```
 
 ---
@@ -774,64 +779,8 @@ Si segueixes aquests patrons, la Knowledge Base serà útil tant per a usuaris n
 
 ---
 
-## Annex: Referència ràpida Markdown
-
-### Negreta
-
-```md
-**text**
-```
-
-**text**
-
-### Cursiva
-
-```md
-*text*
-```
-
-*text*
-
-### Codi inline
-
-```md
-`SELECT * FROM users`
-```
-
-`SELECT * FROM users`
-
-### Llista
-
-```md
-- Element 1
-- Element 2
-```
-
-### Numeració
-
-```md
-1. Pas 1
-2. Pas 2
-```
-
-### Taula
-
-```md
-| Camp | Valor |
-|------|------|
-| Nom | Josep |
-```
-
----
-
 ## Fi de la demostració
 
 Si veus correctament totes les seccions anteriors (admonitions, Mermaid, tabs, checklists, snippets, codi, taules i diagrames), la instal·lació de MkDocs Material està funcionant correctament.
 
-
-
 ----
-
-Etiquetes
-draft_warning
-review-warning
