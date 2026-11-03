@@ -1,26 +1,29 @@
 ---
-title: Guia de referència de Markdown i Material for MkDocs
+title: Guia de referència de Markdown i Zensical
 author: José Antonio Arias
 owner: L'Energetica Tech
 status: actiu
-version: 1.3
-review_date: "2026-10-02"
+version: 1.4
+review_date: "2026-11-03"
 review_period_months: 6 #6 is the default
 tags:
   - KB
-  - MkDocs
   - Zensical
   - Markdown
   - Material for MkDocs
 references:
   - https://zensical.org/docs/studio/get-started/quickstart/
+  - https://zensical.org/docs/compatibility/mkdocs/migration/
+  - https://zensical.org/docs/get-started/
   - https://zensical.org/upcoming-changes/#reserve-studio-pro
 created: "2026-09-01"
 ---
 
-# Guia de referència de Markdown i Material for MkDocs
+# Guia de referència de Markdown i Zensical
 
-Aquesta pàgina és la referència principal de la Knowledge Base per crear documents amb Markdown i Material for MkDocs. Està pensada tant per a usuaris nous com per a persones que ja tenen experiència, i serveix com a guia pràctica per produir documentació clara, coherent i fàcil de mantenir.
+Aquesta pàgina és la referència principal de la Knowledge Base per crear documents amb Markdown i Zensical. Està pensada tant per a usuaris nous com per a persones que ja tenen experiència, i serveix com a guia pràctica per produir documentació clara, coherent i fàcil de mantenir.
+
+La KB es basa actualment en Zensical i es publica a [https://edison.gcc.intranet.gencat.cat/kb](https://edison.gcc.intranet.gencat.cat/kb). Zensical pot utilitzar la configuració existent a `mkdocs.yml`. El workflow de publicació d'aquest repositori encara executa `mkdocs build`; aquest document no en modifica la configuració.
 
 La idea no és només escriure text, sinó crear documents que siguin:
 
@@ -82,7 +85,7 @@ El resultat és:
 
 [Documentació de Markdown](https://www.markdownguide.org/)
 
-Markdown és la base del contingut. Material for MkDocs és la capa que millora la presentació i la navegació.
+Markdown és la base del contingut. Zensical és l'eina actual per generar i publicar el lloc; Material for MkDocs correspon a l'etapa anterior de la KB.
 
 ---
 
@@ -215,27 +218,27 @@ Resultat visual:
 
 ````md
 ```bash
-mkdocs serve
+zensical serve
 ```
 ````
 
 Es recomana especificar el llenguatge del bloc perquè el ressaltat de sintaxi sigui correcte.
 
 ```bash
-mkdocs serve
+zensical serve
 ```
 
 ### 3.9 Codi inline
 
 ```md
-La comanda per iniciar el servei és `mkdocs serve`.
+La comanda per iniciar la previsualització local amb Zensical és `zensical serve`.
 ```
 
 ---
 
-## 4. Material for MkDocs: funcions útils
+## 4. Funcions de Markdown i Material for MkDocs
 
-Material for MkDocs afegeix elements visuals i estructurals que milloren la navegació i la lectura dels documents.
+Els exemples d'aquesta secció mostren elements visuals i estructurals utilitzats amb Material for MkDocs. Es conserven com a referència de l'etapa anterior i cal comprovar-ne la compatibilitat amb la configuració actual de Zensical abans d'introduir-los en documents nous.
 
 ### 4.1 Admonicions
 
@@ -293,17 +296,17 @@ Resultat:
 
 ### 4.3 Pestanyes
 
-La sintaxi correcta de Material per a pestanyes és aquesta:
+La sintaxi de pestanyes utilitzada a la KB és aquesta:
 
 ````md
 === "Windows"
     ```powershell
-    mkdocs serve
+    zensical serve
     ```
 
 === "Linux/macOS"
     ```bash
-    mkdocs serve
+    zensical serve
     ```
 ````
 
@@ -311,12 +314,12 @@ Resultat visual:
 
 === "Windows"
     ```powershell
-    mkdocs serve
+    zensical serve
     ```
 
 === "Linux/macOS"
     ```bash
-    mkdocs serve
+    zensical serve
     ```
 
 ### 4.4 Emoji i iconografia
@@ -567,21 +570,22 @@ Taules, avisos i diagrames són útils, però no han d'ofegar el contingut. L'ob
 Podeu partir d'aquesta plantilla per crear documents nous.
 
 ```yaml
-title: Guia de referència de Markdown i Material for MkDocs
+title: Guia de referència de Markdown i Zensical
 author: José Antonio Arias
 owner: L'Energetica Tech
 status: actiu
-version: 1.3
-review_date: "2026-10-02"
+version: 1.4
+review_date: "2026-11-03"
 review_period_months: 6 #6 is the default
 tags:
   - KB
-  - MkDocs
   - Zensical
   - Markdown
   - Material for MkDocs
 references:
   - https://zensical.org/docs/studio/get-started/quickstart/
+  - https://zensical.org/docs/compatibility/mkdocs/migration/
+  - https://zensical.org/docs/get-started/
   - https://zensical.org/upcoming-changes/#reserve-studio-pro
 created: "2026-09-01"
 ```
@@ -755,7 +759,7 @@ GET /api/plants/{id}
 
 ## 14. Resum
 
-Markdown i Material for MkDocs formen una combinació potent per documentar processos, infraestructures i coneixements tècnics de manera clara i mantenible.
+Markdown i Zensical formen la base actual de la Knowledge Base per documentar processos, infraestructures i coneixements tècnics de manera clara i mantenible.
 
 La clau és:
 
@@ -781,6 +785,6 @@ Si segueixes aquests patrons, la Knowledge Base serà útil tant per a usuaris n
 
 ## Fi de la demostració
 
-Si veus correctament totes les seccions anteriors (admonitions, Mermaid, tabs, checklists, snippets, codi, taules i diagrames), la instal·lació de MkDocs Material està funcionant correctament.
+Si veus correctament els exemples anteriors (admonitions, Mermaid, pestanyes, llistes de tasques, snippets, codi, taules i diagrames), el lloc renderitza aquests elements. La compatibilitat s'ha de validar amb la versió i configuració actual de Zensical.
 
 ----
