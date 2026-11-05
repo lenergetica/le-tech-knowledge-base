@@ -9,13 +9,14 @@ creation_date: "2026-09-01"
 review_date: "2026-11-05"
 review_after_months: 60
 tags:
-  - "KB"
-  - "Zensical"
-  - "Markdown"
+    - "KB"
+    - "Zensical"
+    - "Markdown"
 references:
-  - "https://zensical.org/docs/get-started/"
-  - "https://zensical.org/docs/authoring/diagrams/"
-  - "https://zensical.org/docs/publish-your-site/"
+    - "https://zensical.org/docs/get-started/"
+    - "https://zensical.org/docs/authoring/markdown/"
+    - "https://zensical.org/docs/authoring/diagrams/"
+    - "https://zensical.org/docs/publish-your-site/"
 ---
 
 # Guia de referència de Markdown i Zensical
@@ -23,6 +24,7 @@ references:
 Aquesta pàgina és la referència principal de la Knowledge Base per crear documents amb Markdown i Zensical. Està pensada tant per a usuaris nous com per a persones que ja tenen experiència, i serveix com a guia pràctica per produir documentació clara, coherent i fàcil de mantenir.
 
 La KB utilitza Zensical amb el tema `modern`, configurat a `zensical.toml`.
+La sintaxi de referència és [Python Markdown a Zensical](https://zensical.org/docs/authoring/markdown/).
 Encara no s'ha publicat la primera versió en producció. Les dependències estan
 fixades a `requirements.txt`; el workflow de GitHub Actions executa
 `zensical build --clean` i prepara el resultat de `site/` per a GitHub Pages.
@@ -108,7 +110,10 @@ Markdown és la base del contingut. Zensical genera el lloc, la navegació, el t
 #### Detall
 ```
 
-Es recomana mantenir una jerarquia clara i evitar salts de nivell arbitraris.
+Cada pàgina ha de tenir un únic títol principal `#`, encara que també tingui
+`title` a les metadades. Ordeneu les seccions amb `##`, `###`, etc., sense saltar
+nivells. El text de `nav` preval com a títol de navegació, seguit de `title`,
+del primer `#` i, finalment, del nom del fitxer.
 
 ### 3.2 Èmfasi i format del text
 
@@ -156,6 +161,27 @@ Resultat visual:
 2. Segon pas
 3. Tercer pas
 
+Python Markdown, que utilitza Zensical, requereix **quatre espais** per a
+subllistes, paràgrafs addicionals i blocs de codi dins d'un element de llista.
+Deixeu una línia en blanc abans d'un bloc nou; les línies que només continuen
+el mateix paràgraf poden mantenir-se al mateix element.
+
+````md
+1. Pas principal.
+
+    Paràgraf addicional del mateix pas.
+
+    1. Subpas.
+    2. Un altre subpas.
+
+    ```bash
+    zensical build --clean
+    ```
+````
+
+Canviar `-` per `*` no inicia una llista nova en Python Markdown. Si necessiteu
+dues llistes independents, separeu-les amb un paràgraf o un altre bloc.
+
 #### Llista de tasques
 
 ```md
@@ -192,7 +218,10 @@ Resultat visual:
 [Veure SmartLogger](ot/smartlogger.md)
 [GitHub](https://github.com)
 
-Preferiu rutes relatives internes coherents amb la estructura del repositori.
+Feu servir enllaços relatius als fitxers `.md`, com `../ot/smartlogger.md`,
+en lloc d'URLs absoluts del lloc o rutes `.html`. Zensical adapta aquests enllaços
+a l'URL final de cada pàgina. Els fragments `#seccio` han de correspondre a un
+identificador de títol existent.
 
 ### 3.6 Imatges
 
@@ -589,6 +618,8 @@ site: "Cardedeu"
 ## 7. Estructura recomanada per als documents
 
 Una estructura coherent facilita la cerca i manté la documentació ordenada.
+No poseu `README.md` i `index.md` al mateix directori de `docs/`: tots dos
+es converteixen en `index.html` i el resultat seria ambigu.
 
 ```text
 docs/
@@ -657,6 +688,7 @@ tags:
   - "Markdown"
 references:
   - "https://zensical.org/docs/get-started/"
+  - "https://zensical.org/docs/authoring/markdown/"
   - "https://zensical.org/docs/authoring/diagrams/"
   - "https://zensical.org/docs/publish-your-site/"
 ```
@@ -786,27 +818,27 @@ Reiniciar un SATEL XPRS.
 
 1. Connectar-se al dispositiu.
 
-   ```bash
-   ssh admin@satel01
-   ```
+    ```bash
+    ssh admin@satel01
+    ```
 
 2. Comprovar l'estat.
 
-   ```bash
-   show status
-   ```
+    ```bash
+    show status
+    ```
 
 3. Reiniciar.
 
-   ```bash
-   reboot
-   ```
+    ```bash
+    reboot
+    ```
 
 4. Verificar recuperació.
 
-   ```bash
-   ping 192.168.1.20
-   ```
+    ```bash
+    ping 192.168.1.20
+    ```
 
 ## Resultat esperat
 
