@@ -17,33 +17,23 @@ tags:
 
 Aquest procediment prepara una base de dades nova a HALL amb l'estructura de
 `develrw` i, en un pas posterior, hi copia les dades actuals des de PRO.
-Opcionalment, també configura `postgres_fdw` per consultar taules de `public`
-a PRO des de HALL, si l'aplicació o les vistes materialitzades ho necessiten:
+També habilita `postgres_fdw` per consultar des de HALL les taules de `public`
+de PRO:
 
-1. Es crea una BD a HALL amb TimescaleDB habilitat. La configuració de
-   `postgres_fdw` i la importació de foreign tables són opcionals i independents
-   de la còpia de dades.
-2. Es genera un dump SQL de **només l'estructura** de `develrw` des de la BD d'origen
+1. Es crea una BD a HALL i s'hi habiliten les extensions `timescaledb` i
+   `postgres_fdw`.
+2. Es configura el servidor remot i el user mapping, i s'importen a `public`
+   les foreign tables de PRO.
+3. Es genera un dump SQL de **només l'estructura** de `develrw` des de la BD d'origen
    i es restaura sobre la nova BD. El DDL
    inclou les definicions de les taules normals i les taules que a PRO són
    hypertables, però no les files de dades.
-3. L'script versionat [`restore_develrw_data.sh`](../../scripts/postgres/restore_develrw_data.sh)
+4. L'script versionat [`restore_develrw_data.sh`](../../scripts/postgres/restore_develrw_data.sh)
    copia les dades de les taules
    normals i de les hypertables associades des d'un snapshot consistent de PRO.
-4. Es validen les estructures, les hypertables, els recomptes de files i les
-   seqüències abans que la BD es consideri preparada.
-
-El DDL no conté les dades ni configura per si sol tota la restauració. Cal
-habilitar TimescaleDB i revisar els permisos abans de restaurar-lo. Si cal
-consultar dades remotes, també s'han de configurar `postgres_fdw`, el servidor,
-el user mapping i les foreign tables. L'script de dades crea les hypertables
-de destinació i cal validar-les després.
-
-**Estat:** el DDL de referència i l'script de restauració de dades formen part
-d'aquest repositori. Feu servir l'script del mateix checkout que aquesta guia,
-no una còpia independent a `/var/backups`. Proveu-lo en una BD descartable
-abans d'una restauració operativa. L'script admet reprendre una còpia
-interrompuda amb `--resume`; vegeu-ne les instruccions al punt 3.
+5. Es refresquen les vistes materialitzades que estaven poblades a PRO.
+6. Es valida la restauració: estructures, hypertables, recomptes, seqüències i
+   que l'usuari i propietari dels objectes de `develrw` sigui `energetica`.
 
 ## Abans de començar
 
@@ -55,25 +45,23 @@ Confirmeu i ajusteu els valors d'exemple abans d'executar ordres:
 - Base de dades d'origen: `energetica`.
 - Base de dades de destinació d'exemple: `energetica_develrw`.
 - Rol d'origen: `energetica`.
-- Fitxer DDL temporal dins del contenidor:
-  `/tmp/energetica-develrw-schema-20261028.sql`.
 
-Feu cada restauració en una BD nova i buida. No reutilitzeu una BD amb dades
-sense revisar abans el seu estat. No poseu contrasenyes en aquest document,
-scripts, ordres visibles, historial ni logs; feu servir els prompts
-interactius o el gestor de credencials aprovat.
+!!! info
+  Feu cada restauració en una BD nova i buida. No reutilitzeu una BD amb dades
+  sense revisar abans el seu estat. No poseu contrasenyes en aquest document,
+  scripts, ordres visibles, historial ni logs; feu servir els prompts
+  interactius o el gestor de credencials aprovat.
 
 Abans de començar una restauració, comproveu que les versions de PostgreSQL i
 TimescaleDB de destí són compatibles amb les de l'origen. En particular, el
 DDL de referència es va generar amb `pg_dump` 15.4 des del contenidor i indica
 que l'origen és PostgreSQL 15.4.
 
-Si la BD de destinació ja existeix i està preparada —amb TimescaleDB habilitat
-i els permisos necessaris—, podeu ometre el punt 1 i anar directament al punt
-2. Només cal configurar `postgres_fdw` si es necessiten consultes a taules
-remotes; no és un prerequisit per generar/restaurar el DDL ni per copiar les
-dades amb l'script. El punt 2 genera i, després de verificar el fitxer,
-restaura el DDL.
+Si la BD de destinació ja existeix i està preparada —amb TimescaleDB habilitat,
+`postgres_fdw` configurat i els permisos necessaris—, podeu ometre els punts 1
+i 2.0, després de verificar que la configuració FDW és completa. En recrear la
+BD, completeu sempre el punt 2.0. El punt 3 genera i, després de verificar el
+fitxer, restaura el DDL.
 
 ## 1. Crear la BD de destinació
 
@@ -99,26 +87,25 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 ```
 
 No creeu manualment l'esquema `develrw`: el DDL el crearà. Després de restaurar-lo, executeu el pas final de propietat i permisos del
-punt 5. Com que el dump es genera amb `--no-owner`, els objectes queden
+punt 6. Com que el dump es genera amb `--no-owner`, els objectes queden
 inicialment propietat del rol que executa la restauració (en l'exemple,
 `postgres`). L'script de dades s'executa per defecte com a `postgres` dins del
 contenidor i com a rol PostgreSQL `postgres`; el pas final traspassa la
 propietat de l'esquema `develrw`, els objectes i els chunks al rol
 `energetica`.
 
-### 1.3 Configurar opcionalment `postgres_fdw`
+## 2.0 Configurar `postgres_fdw` i importar les foreign tables
 
-Ometeu aquesta secció si la BD no ha de consultar taules remotes de PRO. La
-còpia de dades de `develrw` es connecta directament a PRO i no depèn de FDW.
-Si calen les foreign tables, connecteu-vos a `energetica_develrw` com a
-`postgres`, activeu l'extensió i doneu al rol local el permís per importar-les:
+En cada recreació de `energetica_develrw`, connecteu-vos a la BD com a
+`postgres`, activeu l'extensió i doneu al rol local el permís per importar les
+taules:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS postgres_fdw;
 GRANT CREATE ON SCHEMA public TO energetica;
 ```
 
-#### 1.3.1 Crear el servidor remot
+### 2.0.1 Crear el servidor remot
 
 Com a `postgres`, creeu el servidor remot i doneu-ne ús al rol local:
 ```sql
@@ -134,7 +121,7 @@ escriviu la contrasenya com a literal en un fitxer o consulta persistent. Si
 el servidor o el mapping ja existeixen, inspeccioneu-los abans de modificar-los
 i no els esborreu amb `CASCADE`.
 
-#### 1.3.2 Crear el user mapping
+### 2.0.2 Crear el user mapping
 
 En una sessió interactiva de `psql` connectada com a `postgres` a la BD de
 destinació, demaneu la contrasenya sense mostrar-la i passeu-la com a variable
@@ -153,7 +140,7 @@ contrasenya en un fitxer ni l'escriviu a la línia d'ordres. Abans d'executar-ho
 assegureu-vos que la configuració de registre del servidor no desi la sentència
 amb la contrasenya expandida.
 
-#### 1.3.3 Importar les foreign tables
+### 2.0.3 Importar les foreign tables
 
 Importeu les foreign tables necessàries com a rol local `energetica`:
 
@@ -163,7 +150,7 @@ FROM SERVER energetica_pro
 INTO public;
 ```
 
-Després de la importació, executeu el pas 5 per transferir-ne la propietat a
+Després de la importació, executeu el pas 6 per transferir-ne la propietat a
 `postgres`, conservar només `SELECT` per a `energetica` i retirar-li `CREATE`
 a l'esquema `public`. La revocació de privilegis d'escriptura no és suficient
 si `energetica` continua sent propietària de les foreign tables.
@@ -171,9 +158,9 @@ si `energetica` continua sent propietària de les foreign tables.
 Consulteu [Configurar postgres_fdw](./configurar-postgres_fdw.md) per als
 detalls de connexió, mapatge i verificació de les foreign tables.
 
-## 2. Crear i restaurar el DDL
+## 3. Crear i restaurar el DDL
 
-### 2.1 Crear un dump DDL de l'esquema develrw de PRO
+### 3.1 Crear un dump DDL de l'esquema develrw de PRO
 
 Per assegurar compatibilitat amb la versió i l'entorn PostgreSQL d'origen,
 executeu `pg_dump` dins del contenidor PostgreSQL indicat. El dump és en format
@@ -240,7 +227,7 @@ genera i restaura el fitxer temporal dins del contenidor. Si l'estructura de
 PRO canvia, genereu i reviseu un DDL nou; no modifiqueu a mà el dump antic amb
 dades.
 
-### 2.2 Restaurar el DDL a Hall
+### 3.2 Restaurar el DDL a Hall
 
 Abans de restaurar, confirmeu que `energetica_develrw` és la BD correcta, que
 l'esquema `develrw` encara no existeix i que TimescaleDB hi està habilitat. La
@@ -278,7 +265,7 @@ No considereu que les taules ja siguin hypertables només perquè el DDL les
 hagi creat com a taules: la conversió i la validació TimescaleDB formen part
 del pas de càrrega de dades pendent.
 
-## 3. Restaurar les dades
+## 4. Restaurar les dades
 
 L'script versionat [`restore_develrw_data.sh`](../../scripts/postgres/restore_develrw_data.sh)
 copia totes les taules locals ordinàries de `develrw` i les hypertables. Llegeix les taules
@@ -374,9 +361,9 @@ de PRO i si caldrà refrescar-les.
 
 No considereu completa la restauració fins a comparar els recomptes amb PRO i
 verificar les hypertables, les seqüències, la compressió, els permisos, les
-vistes materialitzades i la resta de comprovacions dels punts 4–7.
+vistes materialitzades i la resta de comprovacions dels punts 5–8.
 
-## 4. Aplicar compressió i polítiques de PRO (TimescaleDB 2.11)
+## 5. Aplicar compressió i polítiques de PRO (TimescaleDB 2.11)
 
 Després de copiar les dades, executeu les ordres següents a la BD de
 destinació com a `postgres`. Això reprodueix les opcions de compressió de PRO
@@ -462,7 +449,7 @@ afegeix cap.
     la desitjada. Les polítiques poden comprimir chunks elegibles immediatament:
     vigileu l'espai de disc i la càrrega.
 
-## 5. Aplicar la propietat i els permisos finals
+## 6. Aplicar la propietat i els permisos finals
 
 Executeu aquest pas obligatòriament després de restaurar el DDL, copiar les
 dades, crear les hypertables i configurar la compressió i les seves polítiques.
@@ -570,14 +557,14 @@ les foreign tables importades. Verifiqueu els permisos finals amb
 `has_schema_privilege`, `has_table_privilege` i `pg_get_userbyid(relowner)`
 abans d'habilitar l'aplicació.
 
-## 6. Refrescar les vistes materialitzades
+## 7. Refrescar les vistes materialitzades
 
 L'informe TSV indica que 15 vistes materialitzades eren poblades a PRO i 5 no
 ho eren: `factures_dia_mv`, `factures_validar`, `inventari_cups_qh_mv`,
 `mvqh_mensual` i `pig_factures_qh_mv`. El script següent refresca només les 15
 poblades; les cinc `source_unpopulated` es deixen sense poblar per reproduir
 l'estat de PRO.
-Executeu-lo després del pas 5, quan `energetica` ja sigui propietària de les
+Executeu-lo després del pas 6, quan `energetica` ja sigui propietària de les
 vistes i tingui accés de lectura a les foreign tables necessàries.
 
 El script consulta `pg_depend` i segueix també les vistes normals que
@@ -722,7 +709,7 @@ hi ha garantia que el resultat sigui un snapshot globalment consistent. Si es
 requereix coherència estricta, atureu les escriptures a PRO durant la còpia i
 els refrescos, o coordineu explícitament els punts de tall.
 
-## 7. Verificar la restauració
+## 8. Verificar la restauració
 
 Quan l'script de dades hagi acabat, compareu PRO i HALL:
 
@@ -730,11 +717,11 @@ Quan l'script de dades hagi acabat, compareu PRO i HALL:
 - Llista i registre de les hypertables a `timescaledb_information.hypertables`.
 - Opcions de compressió i polítiques a `timescaledb_information.hypertables`,
   `timescaledb_information.compression_settings` i
-  `timescaledb_information.jobs`; han de coincidir amb el pas 4.
+  `timescaledb_information.jobs`; han de coincidir amb el pas 5.
 - Columnes, tipus, ordre, índexs i restriccions.
 - Estat de seqüències i valors per defecte.
 - Estat de les 20 vistes materialitzades: les 15 que eren poblades a PRO han
-  d'estar poblades després del pas 6; les 5 que eren buides a PRO continuen
+  d'estar poblades després del pas 7; les 5 que eren buides a PRO continuen
   sense poblar.
 - Rang temporal de les hypertables i una consulta representativa de l'aplicació.
 - Propietari `energetica` de l'esquema `develrw`, les taules, les vistes, les
@@ -750,11 +737,11 @@ validació.
 
 No esborreu manualment dades ni marcadors per forçar una represa. Si una
 execució queda interrompuda, inspeccioneu els resultats i repreneu-la només
-seguint les condicions del punt 3. Si no podeu verificar quines taules han
+seguint les condicions del punt 4. Si no podeu verificar quines taules han
 acabat o n'hi ha de parcialment copiades, feu servir una BD descartable nova
 per repetir la restauració.
 
-## 8. Programar còpies de seguretat a Databasus (opcional)
+## 9. Programar còpies de seguretat a Databasus (opcional)
 
 Decidiu amb la persona responsable si la BD nova s'ha d'incloure a Databasus.
 Abans de configurar-la:
