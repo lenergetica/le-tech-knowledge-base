@@ -30,3 +30,8 @@ l'[skill document-session](.github/skills/document-session/SKILL.md).
 
 Aquestes metadades són per als articles de la KB; no afegiu la seva capçalera als
 fitxers d'instruccions (`AGENTS.md`, `SKILL.md`), als scripts ni als recursos tècnics.
+
+La KB utilitza `zensical.toml` amb tema `modern` i dependències fixades a
+`requirements.txt`. Després de canvis de contingut o configuració, executeu
+`zensical build --clean` i `python scripts/check_zensical_site.py` des de l'entorn
+Python 3.14 del projecte. Utilitzeu la integració nativa de Mermaid.

@@ -4,7 +4,7 @@ author: "José Antonio Arias"
 reviewed_by: "joseantonioarias"
 owner: "Equip de Tecnologia de L'Energètica"
 status: "actiu"
-version: "1.5"
+version: "1.6"
 creation_date: "2026-09-01"
 review_date: "2026-11-05"
 review_after_months: 60
@@ -12,19 +12,26 @@ tags:
   - "KB"
   - "Zensical"
   - "Markdown"
-  - "Material for MkDocs"
 references:
-  - "https://zensical.org/docs/studio/get-started/quickstart/"
-  - "https://zensical.org/docs/compatibility/mkdocs/migration/"
   - "https://zensical.org/docs/get-started/"
-  - "https://zensical.org/upcoming-changes/#reserve-studio-pro"
+  - "https://zensical.org/docs/authoring/diagrams/"
+  - "https://zensical.org/docs/publish-your-site/"
 ---
 
 # Guia de referència de Markdown i Zensical
 
 Aquesta pàgina és la referència principal de la Knowledge Base per crear documents amb Markdown i Zensical. Està pensada tant per a usuaris nous com per a persones que ja tenen experiència, i serveix com a guia pràctica per produir documentació clara, coherent i fàcil de mantenir.
 
-La KB es basa actualment en Zensical i es publica a [https://edison.gcc.intranet.gencat.cat/kb](https://edison.gcc.intranet.gencat.cat/kb). Zensical pot utilitzar la configuració existent a `mkdocs.yml`. El workflow de publicació d'aquest repositori encara executa `mkdocs build`; aquest document no en modifica la configuració.
+La KB utilitza Zensical amb el tema `modern`, configurat a `zensical.toml`.
+Encara no s'ha publicat la primera versió en producció. Les dependències estan
+fixades a `requirements.txt`; el workflow de GitHub Actions executa
+`zensical build --clean` i prepara el resultat de `site/` per a GitHub Pages.
+La publicació a Edison continua pendent.
+
+Per instal·lar l'entorn i previsualitzar el lloc, seguiu la
+[guia de contribució](contribute/contribute.md). La cerca és nativa de Zensical:
+la configuració del lloc és en català i es pot cercar contingut en català,
+però la interfície del cercador encara apareix en anglès en aquesta versió.
 
 La idea no és només escriure text, sinó crear documents que siguin:
 
@@ -72,11 +79,11 @@ Markdown és un llenguatge de marcat senzill per estructurar documents sense nec
 [Documentació de Markdown](https://www.markdownguide.org/)
 ```
 
-El resultat és:
+El resultat, amb els nivells de títol adaptats a aquesta guia, és:
 
-# Títol principal
+#### Títol principal
 
-## Subtítol
+##### Subtítol
 
 - Element 1
 - Element 2
@@ -86,7 +93,7 @@ El resultat és:
 
 [Documentació de Markdown](https://www.markdownguide.org/)
 
-Markdown és la base del contingut. Zensical és l'eina actual per generar i publicar el lloc; Material for MkDocs correspon a l'etapa anterior de la KB.
+Markdown és la base del contingut. Zensical genera el lloc, la navegació, el tema i la cerca.
 
 ---
 
@@ -237,9 +244,9 @@ La comanda per iniciar la previsualització local amb Zensical és `zensical ser
 
 ---
 
-## 4. Funcions de Markdown i Material for MkDocs
+## 4. Funcions de Markdown i Zensical
 
-Els exemples d'aquesta secció mostren elements visuals i estructurals utilitzats amb Material for MkDocs. Es conserven com a referència de l'etapa anterior i cal comprovar-ne la compatibilitat amb la configuració actual de Zensical abans d'introduir-los en documents nous.
+Els exemples d'aquesta secció utilitzen les extensions Markdown configurades a `zensical.toml` i el tema `modern` de Zensical.
 
 ### 4.1 Admonicions
 
@@ -367,7 +374,7 @@ echo "Exemple de codi"
 
 ### 4.7 Tecles ràpides
 
-Material també permet mostrar tecles de teclat amb estil:
+Zensical permet mostrar tecles de teclat amb estil:
 
 ```md
 Prem ++ctrl+c++ per copiar.
@@ -383,13 +390,15 @@ Prem ++ctrl+v++ per enganxar.
 
 ## 5. Diagrames amb Mermaid
 
-Material for MkDocs permet incloure diagrames Mermaid dins dels documents. La sintaxi és la següent:
+Zensical renderitza els blocs `mermaid` amb la integració nativa configurada a
+`zensical.toml`. Zensical gestiona la càrrega del runtime des del seu CDN;
+no afegiu una segona càrrega o un script propi d'inicialització. La sintaxi és la següent:
 
 ````md
 ```mermaid
 flowchart LR
     A[Document] --> B[Markdown]
-    B --> C[Material for MkDocs]
+    B --> C[Zensical]
     C --> D[Publicació]
 ```
 ````
@@ -399,7 +408,7 @@ Resultat visual:
 ```mermaid
 flowchart LR
     A[Document] --> B[Markdown]
-    B --> C[Material for MkDocs]
+    B --> C[Zensical]
     C --> D[Publicació]
 ```
 
@@ -443,15 +452,15 @@ owner: "Equip de Tecnologia de L'Energètica"
 status: "actiu"
 version: "1.3"
 creation_date: "2026-09-01"
-review_date: "2026-10-04"
+review_date: "2026-11-05"
 review_after_months: 60
 tags:
   - "smartlogger"
   - "huawei"
   - "ot"
 references:
-  - "https://zensical.org/docs/studio/get-started/quickstart/"
-  - "https://zensical.org/upcoming-changes/#reserve-studio-pro"
+  - "https://zensical.org/docs/authoring/diagrams/"
+  - "https://zensical.org/docs/publish-your-site/"
 ---
 ```
 
@@ -541,7 +550,7 @@ a referència per als avisos de vigència del web i no implica una aprovació;
 conserveu `status: draft` fins que es confirmi la revisió o aprovació corresponent.
 
 ```yaml
-review_date: "2026-10-04"
+review_date: "2026-11-05"
 ```
 
 #### `review_after_months`
@@ -638,7 +647,7 @@ author: "José Antonio Arias"
 reviewed_by: "joseantonioarias"
 owner: "Equip de Tecnologia de L'Energètica"
 status: "actiu"
-version: "1.5"
+version: "1.6"
 creation_date: "2026-09-01"
 review_date: "2026-11-05"
 review_after_months: 60
@@ -646,12 +655,10 @@ tags:
   - "KB"
   - "Zensical"
   - "Markdown"
-  - "Material for MkDocs"
 references:
-  - "https://zensical.org/docs/studio/get-started/quickstart/"
-  - "https://zensical.org/docs/compatibility/mkdocs/migration/"
   - "https://zensical.org/docs/get-started/"
-  - "https://zensical.org/upcoming-changes/#reserve-studio-pro"
+  - "https://zensical.org/docs/authoring/diagrams/"
+  - "https://zensical.org/docs/publish-your-site/"
 ```
 
 ---
@@ -666,7 +673,7 @@ Activeu el hook una vegada per checkout, des de l'arrel del repositori:
 ./scripts/install-hooks.sh
 ```
 
-L'[instal·lador](../scripts/install-hooks.sh) requereix Python 3.9 o superior i
+L'[instal·lador](https://github.com/lenergetica/le-tech-knowledge-base/blob/main/scripts/install-hooks.sh) requereix Python 3.9 o superior i
 configura `core.hooksPath` localment. Si ja hi ha altres hooks actius, demana
 integrar-los abans de canviar la configuració.
 
@@ -869,8 +876,9 @@ Si segueixes aquests patrons, la Knowledge Base serà útil tant per a usuaris n
 ## 15. Enllaços útils
 
 - [Markdown Guide](https://www.markdownguide.org/)
-- [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)
-- [Documentació de MkDocs](https://www.mkdocs.org/)
+- [Documentació de Zensical](https://zensical.org/docs/)
+- [Extensions Markdown](https://zensical.org/docs/compatibility/markdown/python-markdown-extensions/)
+- [Diagrames Mermaid](https://zensical.org/docs/authoring/diagrams/)
 - Automatització
 - Possibilitat d'integració amb IA
 
@@ -878,6 +886,6 @@ Si segueixes aquests patrons, la Knowledge Base serà útil tant per a usuaris n
 
 ## Fi de la demostració
 
-Si veus correctament els exemples anteriors (admonitions, Mermaid, pestanyes, llistes de tasques, snippets, codi, taules i diagrames), el lloc renderitza aquests elements. La compatibilitat s'ha de validar amb la versió i configuració actual de Zensical.
+Si veus correctament els exemples anteriors (admonitions, Mermaid, pestanyes, llistes de tasques, snippets, codi, taules i diagrames), el lloc renderitza aquests elements. Després de canviar la configuració, reconstruïu el lloc i comproveu aquesta pàgina al navegador.
 
 ----

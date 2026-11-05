@@ -1,5 +1,4 @@
 - Revisar overrides/main.html i status-warning.js perquè em dona la sensació que es pot simplificar.
-- Revisar MkDocs 2.0: https://squidfunk.github.io/mkdocs-material/blog/2026/02/18/mkdocs-2.0/
 - Revisar etiquetas: ¿inglés o catalán? ¿cuáles? ¿qué valores puede tener status?
 - Afegir a index.html com nombrar fitxers.
 - L'script projectes/energetica_utils/copia_dades_pro2hall.sh hauria d'estar a GitHub o en algun altre lloc?

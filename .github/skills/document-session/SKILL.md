@@ -23,7 +23,7 @@ base page, not a transcript or a speculative summary.
 
 2. **Choose the document location**
    - Follow the existing `docs/` taxonomy and the Zensical site navigation
-     (currently configured in `mkdocs.yml`). Put the page beside related
+     (currently configured in `zensical.toml`). Put the page beside related
      material; create a folder only when it represents a useful category.
    - For a new page, add it to the appropriate `nav` section in the site
      configuration. Avoid duplicate pages; update the existing page if it
@@ -36,11 +36,15 @@ base page, not a transcript or a speculative summary.
 3. **Create useful documentation**
    - Write in Catalan by default, matching the repository's existing material
      unless the user requests another language.
-   - The KB is based on Zensical and is published at
-     [https://edison.gcc.intranet.gencat.cat/kb](https://edison.gcc.intranet.gencat.cat/kb).
-     Zensical can use the existing `mkdocs.yml` configuration. The deployment
-     workflow may still contain MkDocs commands; do not change it as part of a
-     documentation task unless the user asks.
+   - The KB uses Zensical with the `modern` theme and `zensical.toml`.
+     The first production release is still pending. Dependencies are pinned in
+     `requirements.txt`; install them in a virtual environment with Python 3.14.
+     The GitHub Actions workflow builds with `zensical build --clean` and
+     publishes the `site/` artifact to GitHub Pages. Deployment to Edison is
+     pending; do not describe it as completed.
+   - Use Zensical's native Mermaid integration. Do not add a second CDN script
+     or custom Mermaid initializer. Keep document metadata and review warnings
+     working when changing templates or JavaScript.
    - Use Zensical commands for local previews and builds, and verify any
      tooling-specific instructions against
      [Zensical's documentation](https://zensical.org/docs/get-started/).
