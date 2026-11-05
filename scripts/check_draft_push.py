@@ -106,13 +106,17 @@ def main():
         for path in sorted(drafts):
             print(f"  {path!r}", file=sys.stderr)
         try:
-            terminal = open("/dev/tty", "r+", encoding="utf-8", buffering=1)
-        except OSError:
+            # Git uses stdin for ref updates; read the answer from the controlling
+            # terminal. Separate streams avoid r+ requiring a seekable device.
+            with open("/dev/tty", "r", encoding="utf-8") as terminal_input:
+                with open("/dev/tty", "w", encoding="utf-8", buffering=1) as terminal_output:
+                    terminal_output.write("Voleu canviar-los a active? [s] Sí (atura el push) / [n] No, enviar com a draft / [c] Cancel·lar [c]: ")
+                    terminal_output.flush()
+                    answer = terminal_input.readline().strip().lower()
+        except OSError as error:
             print("Cal respondre des d'un terminal interactiu. Repetiu git push al terminal per decidir si voleu passar-los a active o enviar-los com a draft.", file=sys.stderr)
+            print(f"Detall de l'error del terminal: {error}", file=sys.stderr)
             return 1
-        with terminal:
-            terminal.write("Voleu canviar-los a active? [s] Sí (atura el push) / [n] No, enviar com a draft / [c] Cancel·lar [c]: ")
-            answer = terminal.readline().strip().lower()
         if answer in {"n", "no"}:
             print("S'envien els documents com a draft per decisió de l'usuari.", file=sys.stderr)
             return 0

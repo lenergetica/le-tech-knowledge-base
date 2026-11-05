@@ -3,6 +3,9 @@
 import importlib.util
 import io
 import os
+import pty
+import select
+import time
 from pathlib import Path
 import shutil
 import subprocess
@@ -24,6 +27,8 @@ class Terminal:
         return len(text)
     def readline(self):
         return self.answer + "\n"
+    def flush(self):
+        pass
     def __enter__(self):
         return self
     def __exit__(self, *args):
@@ -127,6 +132,65 @@ class PushTests(unittest.TestCase):
     def test_deletion_is_ignored(self):
         protocol = f"(delete) {'0' * 40} refs/heads/main {self.head}\n"
         self.assertEqual(hook.candidates(io.StringIO(protocol), "origin"), {})
+
+    def push_with_terminal(self, answer):
+        (self.repo / ".githooks").mkdir()
+        (self.repo / "scripts").mkdir()
+        shutil.copy2(ROOT / ".githooks/pre-push", self.repo / ".githooks/pre-push")
+        shutil.copy2(ROOT / "scripts/check_draft_push.py", self.repo / "scripts/check_draft_push.py")
+        self.git("config", "core.hooksPath", ".githooks")
+        pid, terminal = pty.fork()
+        if pid == 0:
+            os.execvp("git", ["git", "push", "origin", "main"])
+        output = b""
+        answered = False
+        waited = False
+        try:
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                ready, _, _ = select.select([terminal], [], [], 0.1)
+                if not ready:
+                    continue
+                try:
+                    chunk = os.read(terminal, 65536)
+                except OSError:
+                    break  # Linux PTYs return EIO when the child closes them.
+                if not chunk:
+                    break
+                output += chunk
+                if b"[c]: " in output and not answered:
+                    os.write(terminal, (answer + "\n").encode())
+                    answered = True
+            else:
+                self.fail("Interactive git push timed out: " + output.decode(errors="replace"))
+            _, status = os.waitpid(pid, 0)
+            waited = True
+            self.assertTrue(answered, output.decode(errors="replace"))
+            return os.waitstatus_to_exitcode(status), output
+        finally:
+            os.close(terminal)
+            if not waited:
+                try:
+                    os.kill(pid, 9)
+                except ProcessLookupError:
+                    pass
+                os.waitpid(pid, 0)
+
+    def test_terminal_yes_activates_and_stops_push(self):
+        code, output = self.push_with_terminal("s")
+        self.assertNotEqual(code, 0)
+        self.assertIn(b"Documents passats a active", output)
+        self.assertIn('status: "active"', self.path.read_text())
+        self.assertEqual(self.git("show", f":{self.path}").stdout.decode(), self.original)
+        remote_head = self.git("--git-dir", str(self.remote), "rev-parse", "refs/heads/main").stdout.decode().strip()
+        self.assertEqual(remote_head, self.base)
+
+    def test_terminal_no_sends_draft(self):
+        code, output = self.push_with_terminal("n")
+        self.assertEqual(code, 0, output.decode(errors="replace"))
+        self.assertEqual(self.path.read_text(), self.original)
+        remote_head = self.git("--git-dir", str(self.remote), "rev-parse", "refs/heads/main").stdout.decode().strip()
+        self.assertEqual(remote_head, self.head)
 
     def test_actual_git_push_executes_hook(self):
         (self.repo / ".githooks").mkdir()
