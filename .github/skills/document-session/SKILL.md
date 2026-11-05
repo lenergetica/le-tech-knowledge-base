@@ -1,5 +1,5 @@
 ---
-name: document-session
+name: "document-session"
 description: "Use when asked to document work from a chat session, write up what was done, add a knowledge-base article or runbook, or turn decisions and troubleshooting into team documentation. Follows this repository's Markdown, metadata, folder, and Zensical navigation conventions."
 ---
 
@@ -63,23 +63,50 @@ base page, not a transcript or a speculative summary.
    ```yaml
    ---
    title: "<títol clar i descriptiu>"
-   author: "<persona autora o Equip de Tecnologia>"
-   owner: L'Energetica Tech
-   status: draft
-   version: 1.0
+   author: "<nom de l'usuari que crea el document>"
+   reviewed_by: "<nom de l'usuari que fa aquesta actualització o revisió>"
+   owner: "Equip de Tecnologia de L'Energètica"
+   status: "draft"
+   version: "1.0"
+   creation_date: "YYYY-MM-DD"
    review_date: "YYYY-MM-DD"
-   review_period_months: 6
+   review_after_months: 60
    tags:
      - "<tema>"
    references: []
-   created: "YYYY-MM-DD"
    ---
    ```
 
-   - Use today's date for `created` and `review_date` when creating a new
-     document. If an individual author is not known, use `Equip de Tecnologia`
-     rather than guessing a person's name. Keep the initial status as `draft`
-     unless the user explicitly confirms review or approval.
+   - Keep `author` and `reviewed_by` together, and group `creation_date`,
+     `review_date`, and `review_after_months` in that order.
+     Dates use quoted `YYYY-MM-DD` values, without a time component. Use double
+     quotes for all text values, including names, statuses, versions, tags, and
+     references; keep integers such as `review_after_months` unquoted.
+   - For a new document, use today's date for `creation_date` and
+     `review_date`. For an existing document, preserve its creation date;
+     migrate the old `created` value to `creation_date`. If no date is recorded,
+     the first verifiable Git addition can serve as a reference. Omit the field
+     if there is insufficient evidence rather than inventing a date.
+   - For a new document, set both `author` and `reviewed_by` to the name of the
+     user creating it. Prefer a name explicitly supplied by the user; otherwise
+     use `git config user.name` in the repository. Preserve `author` on later
+     edits, and update `review_date` and `reviewed_by` for the current user.
+     For AI-assisted edits, attribute the change to that user, not the assistant.
+     If the user or original author cannot be determined, ask rather than
+     inventing a name. Do not substitute the last commit author or treat this
+     attribution as evidence of functional approval.
+   - Use `review_date` for the latest document update or review, including
+     formatting and metadata edits; do not add a separate modification date.
+     Keep this field name compatible with the site's existing review warnings.
+     This date does not imply functional approval: new documents start as
+     `draft`. The repository's pre-push hook asks the user whether outgoing
+     drafts should become `active`; never approve that change on the user's
+     behalf. Accepting stops the push so the user can review and commit the
+     change before pushing again.
+   - Use `review_after_months` for the months after `review_date` when the
+     document needs review because it may be outdated. The default is 60 months;
+     preserve an existing explicit interval unless a change is requested.
+     New front matter uses this name instead of `review_period_months`.
    - Choose a small set of useful tags. Add `references` only for real sources;
      remove the field if there are none.
 
