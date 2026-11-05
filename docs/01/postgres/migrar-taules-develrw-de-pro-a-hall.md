@@ -1,18 +1,20 @@
 ---
-darrera_revisio: 2026-08-15
-caducitat_dies: 180
-estat: actiu
-owner: L'Energetica Tech
-status: draft
-review_date: 2026-2-05
-review_period_months: 1
+title: "Configuració inicial FDW i còpia pilot d'una taula develrw"
+author: "joseantonioarias"
+reviewed_by: "joseantonioarias"
+owner: "Equip de Tecnologia de L'Energètica"
+status: "draft"
+version: "1.0"
+creation_date: "2026-10-06"
+review_date: "2026-11-05"
+review_after_months: 1
 tags:
-    - postgresql
-    - hall
-    - edison
-    - base de dades
-    - postgres_fdw
-    - GISCE
+    - "postgresql"
+    - "hall"
+    - "edison"
+    - "base de dades"
+    - "postgres_fdw"
+    - "GISCE"
 ---
 
 # Configuració inicial FDW i còpia pilot d'una taula develrw
@@ -35,7 +37,7 @@ Els passos següents documenten la còpia de `develrw.apigisce_tgf1` i serveixen
     FROM develrw.apigisce_tgf1;
     ```
 
-    ```result
+    ```text
     count   |min                    |max                    |
     --------+-----------------------+-----------------------+
     19422440|2023-04-30 23:00:00.000|2026-09-30 22:00:00.000|
@@ -135,7 +137,7 @@ Els passos següents documenten la còpia de `develrw.apigisce_tgf1` i serveixen
     WHERE hypertable_name = 'apigisce_tgf1';
     ```
 
-    ```result
+    ```text
     hypertable_schema|hypertable_name|owner     |num_dimensions|num_chunks|compression_enabled|is_distributed|replication_factor|data_nodes|tablespaces|
     -----------------+---------------+----------+--------------+----------+-------------------+--------------+------------------+----------+-----------+
     develrw          |apigisce_tgf1  |energetica|             1|       179|false              |false         |                  |NULL      |NULL       |
@@ -148,7 +150,7 @@ Els passos següents documenten la còpia de `develrw.apigisce_tgf1` i serveixen
     ORDER BY dimension_number;
     ```
 
-    ```result
+    ```text
     hypertable_schema|hypertable_name|dimension_number|column_name|column_type                |dimension_type|time_interval|integer_interval|integer_now_func|num_partitions|
     -----------------+---------------+----------------+-----------+---------------------------+--------------+-------------+----------------+----------------+--------------+
     develrw          |apigisce_tgf1  |               1|timestamp  |timestamp without time zone|Time          |       7 days|                |                |              |
@@ -180,14 +182,15 @@ Els passos següents documenten la còpia de `develrw.apigisce_tgf1` i serveixen
     AND hypertable_name = 'apigisce_tgf1';
     ```
 
-    ```result
+    ```text
     hypertable_schema|hypertable_name|dimension_number|column_name|column_type                |dimension_type|time_interval|
     -----------------+---------------+----------------+-----------+---------------------------+--------------+-------------+
     develrw          |apigisce_tgf1  |               1|timestamp  |timestamp without time zone|Time          |       7 days|
     ```
 
 1. Copiem les dades d'una taula a l'altra (la PK ja ens dona integritat respecte a duplicats; crearem els índexs a la taula de *Hall* després de la còpia, per no penalitzar-la més).
-L'script `projectes/energetica_utils/copia_dades_pro2hall.sh` (a Hall) permet copiar les dades d'una taula a l'altra, mes a mes i amb comprovacions. A la capçalera de l'script s'explica com funciona.
+
+    L'script `projectes/energetica_utils/copia_dades_pro2hall.sh` (a Hall) permet copiar les dades d'una taula a l'altra, mes a mes i amb comprovacions. A la capçalera de l'script s'explica com funciona.
 
 1. Un cop copiades les dades, cal crear els índexs que hem vist al DDL (el de PK no cal, i el de *timestamp* tampoc, perquè ja el crea *Timescale*):
 
@@ -209,7 +212,7 @@ L'script `projectes/energetica_utils/copia_dades_pro2hall.sh` (a Hall) permet co
     ORDER BY indexname;
     ```
 
-    ```result
+    ```text
     indexname                  |indexdef                                                                                                                                                         |
     ---------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
     apigisce_tgf1_p_ts_cups_idx|CREATE INDEX apigisce_tgf1_p_ts_cups_idx ON develrw.apigisce_tgf1 USING btree ("timestamp", cups) INCLUDE (date, ai_kwh, ao_kwh) WHERE ((type)::text = 'p'::text)|

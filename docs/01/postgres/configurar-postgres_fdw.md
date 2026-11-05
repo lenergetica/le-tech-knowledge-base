@@ -1,15 +1,20 @@
 ---
-owner: L'Energetica Tech
-status: draft
-review_date: 2026-11-05
-review_period_months: 1
+title: "Configurar postgres_fdw"
+author: "joseantonioarias"
+reviewed_by: "joseantonioarias"
+owner: "Equip de Tecnologia de L'Energètica"
+status: "draft"
+version: "1.0"
+creation_date: "2026-10-05"
+review_date: "2026-11-05"
+review_after_months: 1
 tags:
-    - postgresql
-    - hall
-    - edison
-    - base de dades
-    - postgres_fdw
-    - GISCE
+    - "postgresql"
+    - "hall"
+    - "edison"
+    - "base de dades"
+    - "postgres_fdw"
+    - "GISCE"
 ---
 
 # Configurar postgres_fdw
@@ -41,7 +46,7 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     ```
 
 1. Ens connectem a la nova BD `energetica`. Comprovem si el rol local
-   `energetica` ja existeix; només si falta, el creem com a `postgres`:
+    `energetica` ja existeix; només si falta, el creem com a `postgres`:
 
     ```sql
     CREATE ROLE energetica LOGIN;
@@ -98,8 +103,8 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     Això ens ha de mostrar que estem connectats com a `energetica`
 
 1. Associem el rol local `energetica` amb les credencials de PRO. Des del host
-   Docker i l'arrel del repositori, executem l'[script de mapping](../../scripts/postgres/configure_develrw_fdw_mapping.sh),
-   que demana la contrasenya amb entrada oculta:
+    Docker i l'arrel del repositori, executem l'[script de mapping](../../scripts/postgres/configure_develrw_fdw_mapping.sh),
+    que demana la contrasenya amb entrada oculta:
 
     ```bash
     ./docs/scripts/postgres/configure_develrw_fdw_mapping.sh \
@@ -119,7 +124,7 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     ```
 
 1. Per deixar l'accés local a les taules foranes només de lectura, executem
-   com a `postgres` el [SQL de permisos FDW](../../scripts/postgres/configure_develrw_fdw_permissions.sql):
+    com a `postgres` el [SQL de permisos FDW](../../scripts/postgres/configure_develrw_fdw_permissions.sql):
 
     ```bash
     docker exec -i --user postgres ID_DEL_CONTENIDOR_POSTGRES \
@@ -150,5 +155,7 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
 
 ??? note "Consideracions pel que fa a _hypertables_ TimescaleDB"
     **_postgres\_fdw_** no “veu” els índexs de Timescale com si fossin locals: el que fa és enviar al servidor remot les parts de la consulta que es poden push down; per defecte, només les WHERE amb operadors i funcions built-in o d’extensions declarades com a extensions, i només si són IMMUTABLE. Si la condició es pot enviar al remot, és el servidor remot qui l’executa; si no, l’FDW recupera files i filtra localment.
+
     En la pràctica, això vol dir que si la taula de PRO és una hypertable de TimescaleDB i la query és una SELECT simple sobre una columna indexada, el filtre acostuma a executar-se al remot i, per tant, el servidor de PRO pot aprofitar els seus índexs i la seva partició per chunks. Timescale indica que les hypertables funcionen com taules PostgreSQL normals per a SELECT i que suporten índexs estàndard, però també té les seves pròpies limitacions: els índexs únics han d’incloure totes les columnes de partició, els UPDATE que mouen files entre particions/chunks no s’admeten, i els foreign keys de hypertable a hypertable no estan suportats.
+
     Per tant, la resposta curta és: sí, es pot fer i normalment funciona bé per a lectura, però la clau és que la consulta sigui “shippable” al remot. Si hi poses funcions no built-in, o expressions que l’FDW no pugui enviar, llavors perd pushdown i pot anar molt més lent. Això és una inferència directa del comportament documentat de postgres\_fdw i del fet que Timescale tracta les hypertables com a taules PostgreSQL estàndard per a SELECT.

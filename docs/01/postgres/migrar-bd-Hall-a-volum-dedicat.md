@@ -1,3 +1,20 @@
+---
+title: "Migració de BD PostgreSQL/TimescaleDB a un volum dedicat"
+author: "L'Energètica"
+reviewed_by: "joseantonioarias"
+owner: "Equip de Tecnologia de L'Energètica"
+status: "draft"
+version: "1.0"
+creation_date: "2026-11-03"
+review_date: "2026-11-05"
+review_after_months: 60
+tags:
+    - "postgresql"
+    - "timescaledb"
+    - "hall"
+    - "migracio"
+---
+
 # Migració de BD PostgreSQL/TimescaleDB a un volum dedicat
 
 ## Resum
@@ -40,19 +57,23 @@ Conservar-la permet mantenir la referència disponible per a una possible tornad
 ## Procediment de migració
 
 1. Comprovar amb `docker inspect` que el contenidor munta el volum Docker `etl-postgres-pgdata` a `/var/lib/postgresql/data`.
-  ```bash
-  docker ps | grep etl-postgres
-  docker inspect --format '{{range .Mounts}}{{printf "%s %s -> %s\n" .Type .Source .Destination}}{{end}}' <ID_o_nom_actual_del_contenidor>
-  ```
+
+    ```bash
+    docker ps | grep etl-postgres
+    docker inspect --format '{{range .Mounts}}{{printf "%s %s -> %s\n" .Type .Source .Destination}}{{end}}' <ID_o_nom_actual_del_contenidor>
+    ```
+
 2. Confirmar amb PostgreSQL que `data_directory` és `/var/lib/postgresql/data`.
 3. Comprovar que el disc dedicat està muntat a `/mnt/HC_Volume_103924452` i que aquest muntatge es restableix després d'un reinici.
 4. Aturar des de Dokploy els serveis que escriuen a la base de dades i després PostgreSQL. Copiar les dades al disc dedicat preservant permisos, propietaris i atributs:
-  ```bash
-  sudo mkdir -p /mnt/HC_Volume_103924452/postgres/data
-  sudo rsync -aHAX --numeric-ids --info=progress2 \
-    /var/lib/docker/volumes/etl-postgres-l4ljbf_etl-postgres-pgdata/_data/ \
-    /mnt/HC_Volume_103924452/postgres/data/
-  ```
+
+    ```bash
+    sudo mkdir -p /mnt/HC_Volume_103924452/postgres/data
+    sudo rsync -aHAX --numeric-ids --info=progress2 \
+      /var/lib/docker/volumes/etl-postgres-l4ljbf_etl-postgres-pgdata/_data/ \
+      /mnt/HC_Volume_103924452/postgres/data/
+    ```
+
 5. Comprovar que la còpia conté `PG_VERSION` i ocupa una mida coherent amb el directori original.
 6. Canviar al Compose el muntatge de dades del servei pel *bind mount* nou i fer *redeploy* des de Dokploy.
 7. Verificar el muntatge efectiu i que PostgreSQL arrenca i dona accés a les dades esperades abans de reprendre les escriptures.
@@ -100,9 +121,12 @@ Conservar el volum Docker antic fins que la instal·lació nova hagi estat valid
 
 1. Aturar el contenidor nou.
 2. Canviar al Compose el muntatge de dades a:
-  ```
-  - etl-postgres-pgdata:/var/lib/postgresql/data
-  ```
+
+    ```yaml
+    - etl-postgres-pgdata:/var/lib/postgresql/data
+    ```
+
 3. Fer *redeploy*.
 
-!!! note "NOTA: No executar les dues ubicacions alhora sobre la mateixa instància. Si s'han escrit dades noves al disc dedicat després de la migració, la còpia antiga no inclourà aquests canvis; caldrà tenir-ho en compte abans de tornar enrere."
+!!! note "Tornada enrere"
+    No executar les dues ubicacions alhora sobre la mateixa instància. Si s'han escrit dades noves al disc dedicat després de la migració, la còpia antiga no inclourà aquests canvis; caldrà tenir-ho en compte abans de tornar enrere.

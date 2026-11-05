@@ -37,8 +37,8 @@ catalana. Els hooks s'han d'activar una vegada a cada checkout.
 
 1. Situeu el Markdown al directori adequat de `docs/`.
 2. Completeu les [metadades](../index.md#6-metadades-del-document-yaml-front-matter).
-   Els documents nous comencen en `draft`; en editar-los, actualitzeu
-   `reviewed_by` i `review_date` i conserveu l'autoria i la data de creació.
+    Els documents nous comencen en `draft`; en editar-los, actualitzeu
+    `reviewed_by` i `review_date` i conserveu l'autoria i la data de creació.
 3. Si és una pàgina nova, afegiu-la a `project.nav` de `zensical.toml`.
 4. Previsualitzeu-la amb `zensical serve` i obriu `http://localhost:8000`.
 5. Construïu i comproveu el lloc abans de fer commit:
