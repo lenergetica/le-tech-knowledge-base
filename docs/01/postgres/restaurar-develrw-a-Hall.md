@@ -11,7 +11,7 @@ tags:
     - postgres_fdw
 ---
 
-# Procediment per restaurar a HALL l'esquema `develrw` incloent-hi hypertaules (timescales associats), i crear taules forànies apuntant a `public` de PRO
+# Procediment per restaurar a HALL l'esquema `develrw` incloent-hi hypertaules (timescales associats), i taules forànies a `public` de PRO
 
 ## En què consisteix
 
@@ -393,73 +393,74 @@ afegeix cap.
 | `apigisce_tgp1_old` | `cups` | `timestamp DESC` | — (PRO no té política) | — |
 | `ree_simel_epfpfqh` | — | `timestamp DESC NULLS FIRST` | 120 dies | 3 dies 12 hores |
 
-```sql
-ALTER TABLE develrw.apigisce_adjunts_factura SET (
-  timescaledb.compress,
-  timescaledb.compress_segmentby = 'cups, tipus',
-  timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
-);
-ALTER TABLE develrw.apigisce_tgcchfact SET (
-  timescaledb.compress,
-  timescaledb.compress_segmentby = 'cups',
-  timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
-);
-ALTER TABLE develrw.apigisce_tgcchval SET (
-  timescaledb.compress,
-  timescaledb.compress_segmentby = 'cups',
-  timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
-);
-ALTER TABLE develrw.apigisce_tgf1 SET (
-  timescaledb.compress,
-  timescaledb.compress_segmentby = 'cups, type',
-  timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
-);
-ALTER TABLE develrw.apigisce_tgp1_old SET (
-  timescaledb.compress,
-  timescaledb.compress_segmentby = 'cups',
-  timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
-);
-ALTER TABLE develrw.ree_simel_epfpfqh SET (
-  timescaledb.compress,
-  timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
-);
+??? info "Consultes SQL per aplicar les polítiques de compressió"
+    ```sql
+    ALTER TABLE develrw.apigisce_adjunts_factura SET (
+      timescaledb.compress,
+      timescaledb.compress_segmentby = 'cups, tipus',
+      timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
+    );
+    ALTER TABLE develrw.apigisce_tgcchfact SET (
+      timescaledb.compress,
+      timescaledb.compress_segmentby = 'cups',
+      timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
+    );
+    ALTER TABLE develrw.apigisce_tgcchval SET (
+      timescaledb.compress,
+      timescaledb.compress_segmentby = 'cups',
+      timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
+    );
+    ALTER TABLE develrw.apigisce_tgf1 SET (
+      timescaledb.compress,
+      timescaledb.compress_segmentby = 'cups, type',
+      timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
+    );
+    ALTER TABLE develrw.apigisce_tgp1_old SET (
+      timescaledb.compress,
+      timescaledb.compress_segmentby = 'cups',
+      timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
+    );
+    ALTER TABLE develrw.ree_simel_epfpfqh SET (
+      timescaledb.compress,
+      timescaledb.compress_orderby = 'timestamp DESC NULLS FIRST'
+    );
 
-SELECT add_compression_policy(
-  'develrw.apigisce_adjunts_factura'::regclass,
-  INTERVAL '14 days',
-  if_not_exists => TRUE,
-  schedule_interval => INTERVAL '3 days 12 hours'
-);
-SELECT add_compression_policy(
-  'develrw.apigisce_tgcchfact'::regclass,
-  INTERVAL '14 days',
-  if_not_exists => TRUE,
-  schedule_interval => INTERVAL '3 days 12 hours'
-);
-SELECT add_compression_policy(
-  'develrw.apigisce_tgcchval'::regclass,
-  INTERVAL '14 days',
-  if_not_exists => TRUE,
-  schedule_interval => INTERVAL '3 days 12 hours'
-);
-SELECT add_compression_policy(
-  'develrw.apigisce_tgf1'::regclass,
-  INTERVAL '14 days',
-  if_not_exists => TRUE,
-  schedule_interval => INTERVAL '3 days 12 hours'
-);
-SELECT add_compression_policy(
-  'develrw.ree_simel_epfpfqh'::regclass,
-  INTERVAL '120 days',
-  if_not_exists => TRUE,
-  schedule_interval => INTERVAL '3 days 12 hours'
-);
-```
+    SELECT add_compression_policy(
+      'develrw.apigisce_adjunts_factura'::regclass,
+      INTERVAL '14 days',
+      if_not_exists => TRUE,
+      schedule_interval => INTERVAL '3 days 12 hours'
+    );
+    SELECT add_compression_policy(
+      'develrw.apigisce_tgcchfact'::regclass,
+      INTERVAL '14 days',
+      if_not_exists => TRUE,
+      schedule_interval => INTERVAL '3 days 12 hours'
+    );
+    SELECT add_compression_policy(
+      'develrw.apigisce_tgcchval'::regclass,
+      INTERVAL '14 days',
+      if_not_exists => TRUE,
+      schedule_interval => INTERVAL '3 days 12 hours'
+    );
+    SELECT add_compression_policy(
+      'develrw.apigisce_tgf1'::regclass,
+      INTERVAL '14 days',
+      if_not_exists => TRUE,
+      schedule_interval => INTERVAL '3 days 12 hours'
+    );
+    SELECT add_compression_policy(
+      'develrw.ree_simel_epfpfqh'::regclass,
+      INTERVAL '120 days',
+      if_not_exists => TRUE,
+      schedule_interval => INTERVAL '3 days 12 hours'
+    );
+    ```
 
-Les crides `add_compression_policy` són idempotents si ja existeix la política
-perquè fan servir `if_not_exists`; verifiqueu que la configuració existent sigui
-la desitjada. Les polítiques poden comprimir chunks elegibles immediatament:
-vigileu l'espai de disc i la càrrega.
+    Les crides `add_compression_policy` són idempotents si ja existeix la política
+    perquè fan servir `if_not_exists`; verifiqueu que la configuració existent sigui
+    la desitjada. Les polítiques poden comprimir chunks elegibles immediatament:
+    vigileu l'espai de disc i la càrrega.
 
 ## 5. Aplicar la propietat i els permisos finals
 
