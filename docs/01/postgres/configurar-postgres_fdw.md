@@ -1,7 +1,7 @@
 ---
 owner: L'Energetica Tech
 status: draft
-review_date: 2026-2-05
+review_date: 2026-11-05
 review_period_months: 1
 tags:
     - postgresql
@@ -15,6 +15,12 @@ tags:
 # Configurar postgres_fdw
 
 **postgres_fdw** és una extensió nativa de PostgreSQL que permet consultar i modificar dades d'altres bases de dades PostgreSQL remotes. Actua com un pont. Fa que les taules remotes funcionin com si fossin taules locals mitjançant SQL estàndard.
+
+!!! note "Restauració de develrw"
+    Per restaurar `develrw` de PRO a HALL, seguiu el
+    [procediment de restauració](./restaurar-develrw-a-Hall.md), que fixa l'ordre
+    dels passos i els permisos finals. La guia següent és per a una configuració
+    FDW independent; no cal crear `develrw` per utilitzar FDW.
 
 ## Com ho configurem? (exemple a HALL)
 
@@ -34,18 +40,16 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     CREATE DATABASE energetica ENCODING = 'UTF8';
     ```
 
-1. Ara ens hem de connectar a la nova base de dades `energetica` i crear l'esquema `develrw`
+1. Ens connectem a la nova BD `energetica`. Comprovem si el rol local
+   `energetica` ja existeix; només si falta, el creem com a `postgres`:
 
     ```sql
-    CREATE SCHEMA develrw;
+    CREATE ROLE energetica LOGIN;
     ```
 
-1. Creem l'usuari `energetica` i li donem permisos sobre l'esquema `develrw`
-
-    ```sql
-    CREATE ROLE energetica LOGIN PASSWORD '[pwd_usuari_energetica]';
-    GRANT USAGE, CREATE ON SCHEMA develrw TO energetica;
-    ```
+    Establim la contrasenya interactivament amb `\password energetica`.
+    L'esquema `develrw` només és necessari per a les consultes locals de l'exemple
+    final; si el restaurem amb un dump, serà el dump qui el crearà.
 
 1. Activem l'extensió que permet connectar PostgreSQL amb un altre PostgreSQL remot mitjançant foreign tables
 
@@ -55,11 +59,8 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
 
 1. Creem el servidor remot
 
-    Si ja existia, o volem corregir alguna cosa, prèviament l'hem d'eliminar, sinó no cal:
-
-    ```sql
-    --DROP SERVER energetica_pro CASCADE;
-    ```
+    Si ja existeix, inspeccionem el servidor i els mappings abans de modificar-los.
+    No fem servir `DROP SERVER ... CASCADE`: eliminaria els objectes dependents.
 
     Definim el servidor remot. Aquí indicarem
 
@@ -85,7 +86,7 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
 1. Donem permís al rol energetica per crear objectes dins del schema public de la BD local
 
     ```sql
-    GRANT CREATE ON SCHEMA public TO energetica;
+    GRANT USAGE, CREATE ON SCHEMA public TO energetica;
     ```
 
 1. Ens connectem a la BD de HALL amb usuari normal (`energetica`). Comprovem que és així
@@ -96,13 +97,18 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
 
     Això ens ha de mostrar que estem connectats com a `energetica`
 
-1. Associem l’usuari local `energetica` amb unes credencials del servidor remot `energetica_pro`. Això és el que PostgreSQL utilitzarà per connectar-se a PRO quan el rol local `energetica` faci consultes FDW
+1. Associem el rol local `energetica` amb les credencials de PRO. Des del host
+   Docker i l'arrel del repositori, executem l'[script de mapping](../../scripts/postgres/configure_develrw_fdw_mapping.sh),
+   que demana la contrasenya amb entrada oculta:
 
-    ```sql
-    CREATE USER MAPPING FOR energetica
-    SERVER energetica_pro
-    OPTIONS (user 'energetica', password '[pwd_energetica_energetica_pro]');
+    ```bash
+    ./docs/scripts/postgres/configure_develrw_fdw_mapping.sh \
+      ID_DEL_CONTENIDOR_POSTGRES energetica
     ```
+
+    Abans, comprovem que els logs SQL i l'auditoria del servidor no desaran la
+    sentència amb la contrasenya. No executem l'script amb traça del shell o del
+    terminal. El mapping s'emmagatzema al catàleg de PostgreSQL.
 
 1. Importem les taules de l'esquema `public` de la **BD remota** dins de l'esquema `public` **local** com a _foreign tables_. A partir d’aquí, les taules de PRO es poden consultar des de HALL com si fossin locals
 
@@ -112,7 +118,21 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     INTO public;
     ```
 
-1. Fem alguna prova. Aquesta query que consulta una taula de `public` a **HALL**, realment va a consultar aquesta taula a `public` de la **GISCE Producció**
+1. Per deixar l'accés local a les taules foranes només de lectura, executem
+   com a `postgres` el [SQL de permisos FDW](../../scripts/postgres/configure_develrw_fdw_permissions.sql):
+
+    ```bash
+    docker exec -i --user postgres ID_DEL_CONTENIDOR_POSTGRES \
+      psql -X -v ON_ERROR_STOP=1 -U postgres -d energetica \
+      < docs/scripts/postgres/configure_develrw_fdw_permissions.sql
+    ```
+
+    Traspassa a `postgres` les taules foranes de `public`, concedeix `SELECT` a
+    `energetica`, en revoca els privilegis directes d'escriptura i retira `CREATE`
+    a `public`. Repetim aquest pas després de noves importacions i comprovem els
+    permisos efectius, inclosos els heretats. El rol no ha de ser superusuari.
+
+1. Com a `energetica`, fem alguna prova. Aquesta query que consulta una taula de `public` a **HALL**, realment va a consultar aquesta taula a `public` de la **GISCE Producció**
 
     ```sql
     SELECT *

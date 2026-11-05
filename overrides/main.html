@@ -12,7 +12,9 @@
       name="review_date"
       content="{{ page.meta.review_date }}">
   {% endif %}
-  {% if page and page.meta and page.meta.review_period_months is defined %}
-    <meta name="review_period_months" content="{{ page.meta.review_period_months | e }}">
+  {% if page and page.meta and page.meta.review_after_months is defined %}
+    <meta name="review_after_months" content="{{ page.meta.review_after_months | e }}">
+  {% elif page and page.meta and page.meta.review_period_months is defined %}
+    <meta name="review_after_months" content="{{ page.meta.review_period_months | e }}">
   {% endif %}
 {% endblock %}

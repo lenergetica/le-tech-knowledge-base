@@ -1,22 +1,23 @@
 ---
-title: Guia de referència de Markdown i Zensical
-author: José Antonio Arias
-owner: L'Energetica Tech
-status: actiu
-version: 1.4
-review_date: "2026-11-03"
-review_period_months: 6 #6 is the default
+title: "Guia de referència de Markdown i Zensical"
+author: "José Antonio Arias"
+reviewed_by: "joseantonioarias"
+owner: "Equip de Tecnologia de L'Energètica"
+status: "actiu"
+version: "1.5"
+creation_date: "2026-09-01"
+review_date: "2026-11-05"
+review_after_months: 60
 tags:
-  - KB
-  - Zensical
-  - Markdown
-  - Material for MkDocs
+  - "KB"
+  - "Zensical"
+  - "Markdown"
+  - "Material for MkDocs"
 references:
-  - https://zensical.org/docs/studio/get-started/quickstart/
-  - https://zensical.org/docs/compatibility/mkdocs/migration/
-  - https://zensical.org/docs/get-started/
-  - https://zensical.org/upcoming-changes/#reserve-studio-pro
-created: "2026-09-01"
+  - "https://zensical.org/docs/studio/get-started/quickstart/"
+  - "https://zensical.org/docs/compatibility/mkdocs/migration/"
+  - "https://zensical.org/docs/get-started/"
+  - "https://zensical.org/upcoming-changes/#reserve-studio-pro"
 ---
 
 # Guia de referència de Markdown i Zensical
@@ -410,25 +411,47 @@ Els diagrames són útils quan el flux, l'arquitectura o les relacions entre com
 
 Cada fitxer pot incloure metadades a l'inici en format YAML. Aquestes dades ajuden a classificar, revisar i gestionar la documentació del repositori.
 
+Agrupeu `author` i `reviewed_by` per distingir l'autoria original de qui ha fet
+l'última actualització o revisió. Manteniu també juntes les dates, en aquest ordre: `creation_date` i
+`review_date`, seguides de `review_after_months`.
+Totes les dates s'escriuen entre cometes amb el format `YYYY-MM-DD`. El sufix
+`_date` indica que són dates sense hora.
+
+Per coherència, poseu entre cometes dobles tots els valors de text: títols, noms,
+estats, versions, dates, etiquetes i referències. En YAML les cometes són opcionals
+per a molts textos, però aquesta convenció evita diferències de format i
+interpretacions automàtiques com ara una versió `1.0` convertida en nombre.
+Els enters, com `review_after_months: 60`, es mantenen sense cometes.
+
+`creation_date` substitueix l'antic camp `created`; en actualitzar un document
+existent, traslladeu-ne el valor sense canviar-lo. Es conserva `review_date`
+perquè els avisos de vigència del web ja utilitzen aquest nom.
+
+Una actualització o revisió del document actualitza `review_date` i
+`reviewed_by`. Aquesta data no implica una aprovació funcional: l'estat del
+document s'indica amb `status`. Git conserva l'historial detallat dels canvis;
+aquestes metadades en resumeixen l'estat.
+
 ### Exemple complet
 
 ```yaml
 ---
-title: Configuració SmartLogger
-author: José Antonio Arias
-owner: Tech
-status: actiu
-version: 1.3
-review_date: "2026-10-02"
-review_period_months: 6 #6 is the default
+title: "Configuració SmartLogger"
+author: "José Antonio Arias"
+reviewed_by: "joseantonioarias"
+owner: "Equip de Tecnologia de L'Energètica"
+status: "actiu"
+version: "1.3"
+creation_date: "2026-09-01"
+review_date: "2026-10-04"
+review_after_months: 60
 tags:
-  - smartlogger
-  - huawei
-  - ot
+  - "smartlogger"
+  - "huawei"
+  - "ot"
 references:
-  - https://zensical.org/docs/studio/get-started/quickstart/
-  - https://zensical.org/upcoming-changes/#reserve-studio-pro
-created: "2026-09-01"
+  - "https://zensical.org/docs/studio/get-started/quickstart/"
+  - "https://zensical.org/upcoming-changes/#reserve-studio-pro"
 ---
 ```
 
@@ -439,15 +462,34 @@ created: "2026-09-01"
 Títol visible del document.
 
 ```yaml
-title: Configuració SmartLogger
+title: "Configuració SmartLogger"
 ```
 
 #### `author`
 
-Autor original del document.
+Nom de l'usuari que crea el document. Per defecte, utilitzeu el nom indicat per
+l'usuari o, si no n'ha indicat cap, el valor de `git config user.name` al repositori,
+igual que per a `reviewed_by`. En crear-lo, tots dos camps coincideixen.
+Conserveu `author` en les edicions posteriors; actualitzeu només `reviewed_by`.
+Si no es pot determinar l'autoria, demaneu-la sense inventar-la. No utilitzeu el
+nom de l'assistent ni el de l'últim commit com a substitut de l'autoria original.
 
 ```yaml
-author: José Antonio Arias
+author: "José Antonio Arias"
+```
+
+#### `reviewed_by`
+
+Nom de l'usuari que fa l'última actualització o revisió del document.
+Actualitzeu aquest camp juntament amb `review_date`. Per defecte, utilitzeu el
+nom indicat per l'usuari o, si no n'ha indicat cap, el valor de `git config user.name`
+al repositori. També quan s'edita amb assistència d'IA, indiqueu l'usuari i no
+l'eina. Si no es pot determinar el nom, demaneu-lo sense inventar-lo.
+Aquesta atribució no implica una aprovació funcional; l'aprovació es reflecteix
+amb `status`.
+
+```yaml
+reviewed_by: "joseantonioarias"
 ```
 
 #### `owner`
@@ -455,18 +497,21 @@ author: José Antonio Arias
 Equip responsable.
 
 ```yaml
-owner: Tech
+owner: "Equip de Tecnologia de L'Energètica"
 ```
 
 #### `status`
 
-Estat del document.
+Estat del document. Els documents nous es creen amb `status: "draft"`.
+El pas a `active` requereix una decisió explícita de l'usuari; els avisos del web
+continuen reconeixent també l'estat antic `actiu`.
 
 ```yaml
-status: draft
-status: review
-status: approved
-status: deprecated
+status: "draft"
+status: "active"
+status: "review"
+status: "approved"
+status: "deprecated"
 ```
 
 #### `version`
@@ -474,23 +519,41 @@ status: deprecated
 Versió funcional del document.
 
 ```yaml
-version: 1.0
+version: "1.0"
+```
+
+#### `creation_date`
+
+Data de creació del document. Es conserva en les edicions posteriors. Si no hi ha
+una data explícita, es pot utilitzar la primera incorporació verificable a Git
+com a referència; no utilitzeu la data d'una edició com si fos la de creació.
+Si no hi ha evidència suficient, ometeu el camp fins a confirmar-la.
+
+```yaml
+creation_date: "2026-09-01"
 ```
 
 #### `review_date`
 
-Data de la darrera revisió funcional.
+Data de l'última actualització o revisió del document, inclosos els canvis de
+format o metadades. En crear-lo coincideix amb `creation_date`. S'utilitza com
+a referència per als avisos de vigència del web i no implica una aprovació;
+conserveu `status: draft` fins que es confirmi la revisió o aprovació corresponent.
 
 ```yaml
-review_date: "2026-10-02"
+review_date: "2026-10-04"
 ```
 
-#### `review_period_months`
+#### `review_after_months`
 
-Cadència recomanada de revisió.
+Nombre de mesos des de `review_date` després dels quals cal revisar el document
+perquè pot haver quedat obsolet. El valor per defecte és **60 mesos** quan el camp
+s'omet o no conté un enter positiu; cada document pot indicar un termini diferent.
+El nom anterior `review_period_months` es manté compatible amb els avisos del web,
+però les capçaleres noves han d'utilitzar `review_after_months`.
 
 ```yaml
-review_period_months: 6
+review_after_months: 60
 ```
 
 #### `tags`
@@ -499,9 +562,9 @@ Etiquetes per classificar el document.
 
 ```yaml
 tags:
-  - smartlogger
-  - huawei
-  - runbook
+  - "smartlogger"
+  - "huawei"
+  - "runbook"
 ```
 
 #### `site`
@@ -509,7 +572,7 @@ tags:
 Ubicació o instal·lació relacionada.
 
 ```yaml
-site: Cardedeu
+site: "Cardedeu"
 ```
 
 ---
@@ -570,29 +633,59 @@ Taules, avisos i diagrames són útils, però no han d'ofegar el contingut. L'ob
 Podeu partir d'aquesta plantilla per crear documents nous.
 
 ```yaml
-title: Guia de referència de Markdown i Zensical
-author: José Antonio Arias
-owner: L'Energetica Tech
-status: actiu
-version: 1.4
-review_date: "2026-11-03"
-review_period_months: 6 #6 is the default
+title: "Guia de referència de Markdown i Zensical"
+author: "José Antonio Arias"
+reviewed_by: "joseantonioarias"
+owner: "Equip de Tecnologia de L'Energètica"
+status: "actiu"
+version: "1.5"
+creation_date: "2026-09-01"
+review_date: "2026-11-05"
+review_after_months: 60
 tags:
-  - KB
-  - Zensical
-  - Markdown
-  - Material for MkDocs
+  - "KB"
+  - "Zensical"
+  - "Markdown"
+  - "Material for MkDocs"
 references:
-  - https://zensical.org/docs/studio/get-started/quickstart/
-  - https://zensical.org/docs/compatibility/mkdocs/migration/
-  - https://zensical.org/docs/get-started/
-  - https://zensical.org/upcoming-changes/#reserve-studio-pro
-created: "2026-09-01"
+  - "https://zensical.org/docs/studio/get-started/quickstart/"
+  - "https://zensical.org/docs/compatibility/mkdocs/migration/"
+  - "https://zensical.org/docs/get-started/"
+  - "https://zensical.org/upcoming-changes/#reserve-studio-pro"
 ```
 
 ---
 
 ## 10. Comprovació ràpida abans de publicar
+
+### Avís de documents draft abans del push
+
+Activeu el hook una vegada per checkout, des de l'arrel del repositori:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+L'[instal·lador](../scripts/install-hooks.sh) requereix Python 3.9 o superior i
+configura `core.hooksPath` localment. Si ja hi ha altres hooks actius, demana
+integrar-los abans de canviar la configuració.
+
+En fer `git push`, el hook comprova els documents de `docs/` afectats pel push
+que continuen en `draft` a la versió que s'enviarà. Permet decidir entre:
+
+- **Sí, passar a active:** actualitza el fitxer de treball, `reviewed_by`,
+  `review_date` i `owner`, i atura el push. Reviseu els canvis, feu `git add` i
+  `git commit`, i repetiu `git push`.
+- **No, enviar com a draft:** continua el push amb els esborranys.
+- **Cancel·lar:** atura el push sense modificar els documents; és l'opció per defecte.
+
+No fa commits automàtics ni sobreescriu documents amb canvis pendents. Només
+pot activar automàticament fitxers del `HEAD` actual que coincideixin amb la
+versió que s'envia. Si el client Git no ofereix un terminal interactiu, el push
+amb esborranys s'atura i cal repetir-lo des del terminal.
+El hook és local a cada checkout; no és una restricció del servidor.
+
+### Comprovacions del document
 
 Abans d'acceptar un document, revisa:
 

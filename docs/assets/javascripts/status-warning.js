@@ -28,13 +28,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const periodMeta = document.querySelector('meta[name="review_period_months"]');
-        const configuredMonths = Number(periodMeta?.content);
-        const reviewPeriodMonths = Number.isInteger(configuredMonths) && configuredMonths > 0
+        const afterMeta = document.querySelector('meta[name="review_after_months"]')
+            ?? document.querySelector('meta[name="review_period_months"]');
+        const configuredMonths = Number(afterMeta?.content);
+        const reviewAfterMonths = Number.isInteger(configuredMonths) && configuredMonths > 0
             ? configuredMonths
-            : 6;
+            : 60;
         const reviewCutoff = new Date();
-        reviewCutoff.setMonth(reviewCutoff.getMonth() - reviewPeriodMonths);
+        reviewCutoff.setMonth(reviewCutoff.getMonth() - reviewAfterMonths);
 
         if (reviewDate >= reviewCutoff) {
             return;
@@ -42,10 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         title = "Document pendent de revisió";
         message = `Aquest document no s'ha revisat durant ${
-            reviewPeriodMonths === 1
+            reviewAfterMonths === 1
                 ? "el darrer mes"
-                : `els darrers ${reviewPeriodMonths} mesos`
-        }.`;
+                : `els darrers ${reviewAfterMonths} mesos`
+        } i pot haver quedat obsolet.`;
     } else {
         const messages = new Map([
             ["draft", [
