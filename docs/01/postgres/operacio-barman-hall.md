@@ -1,15 +1,20 @@
 ---
-owner: L'Energetica Tech
-status: draft
-review_date: 2026-10-21
-review_period_months: 1
+title: "Operació de les còpies PostgreSQL de Hall amb Barman"
+author: "Miquel Llover Téllez"
+reviewed_by: "joseantonioarias"
+owner: "Equip de Tecnologia de L'Energètica"
+status: "draft"
+version: "1.0"
+creation_date: "2026-10-20"
+review_date: "2026-11-05"
+review_after_months: 1
 tags:
-    - postgresql
-    - hall
-    - edison
-    - base de dades
-    - databasus
-    - develrw
+    - "postgresql"
+    - "hall"
+    - "edison"
+    - "base de dades"
+    - "databasus"
+    - "develrw"
 ---
 
 # Operació de les còpies PostgreSQL de Hall amb Barman
