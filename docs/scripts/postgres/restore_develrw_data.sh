@@ -11,7 +11,7 @@ if (($# < 1)); then
 fi
 DEST_CONTAINER="$1"
 shift
-DEST_DB="${DEST_DB:-energetica_test7}"
+DEST_DB="${DEST_DB:-energetica_develrw}"
 if (($# > 0)) && [[ "$1" != "--resume" ]]; then
     DEST_DB="$1"
     shift
