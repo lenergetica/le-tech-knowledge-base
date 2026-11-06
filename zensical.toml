@@ -14,6 +14,9 @@ nav = [
         { "Certificats" = [
             { "Renovar certificat SSL Edison" = "01/certificats/renovar-certificat-ssl-edison.md" },
         ] },
+        {"Dokploy" = [
+            { "Publicar un port a Traefik quan falla «Additional Port Mappings»" = "01/dokploy/publicar-port-traefik-error-mapping.md" },
+        ]},
         { "Postgres" = [
             { "Configurar postgres_fdw" = "01/postgres/configurar-postgres_fdw.md" },
             { "Configuració FDW inicial i còpia pilot" = "01/postgres/migrar-taules-develrw-de-pro-a-hall.md" },
