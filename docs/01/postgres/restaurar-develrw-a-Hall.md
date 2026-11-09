@@ -420,14 +420,6 @@ es tanca en acabar i no es pot reutilitzar a posteriori ni aplicar a HALL.
 Conserveu el TSV, l'inventari de PRO i els resultats de verificació com a evidència
 de la restauració, sense credencials.
 
-## 9. Programar còpies de seguretat a Databasus (opcional)
+## 9. Programar còpies de seguretat
 
-Decidiu amb la persona responsable si cal incloure la BD nova a Databasus.
-Comproveu si el rol de clúster `databasus` ja existeix abans de crear-lo; a la
-referència de HALL ja existia. Doneu-li els permisos de lectura necessaris i
-proveu una còpia amb la retenció i el destí acordats. Si cal establir-ne la
-contrasenya, feu-ho interactivament amb `\password databasus`.
-
-Les taules foranes no són una còpia local de PRO. No activeu la còpia de dades
-remotes sense validar-ne l'impacte i les credencials. Deseu les credencials dels
-mappings al gestor de secrets.
+Veure [Operació Barman Hall](./operacio-barman-hall.md).
