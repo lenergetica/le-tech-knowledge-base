@@ -1,25 +1,23 @@
 # le-tech-knowledge-base
 
 Knowledge Base de l'Equip de Tecnologia de L'Energètica, amb Zensical i tema
-`modern`. La configuració és a `zensical.toml`; les dependències estan fixades a
-`requirements.txt`.
+`modern`. La configuració és a `zensical.toml`; les dependències de build i validació
+es gestionen amb uv i queden fixades a `uv.lock`.
 
 ## Desenvolupament local
 
-Amb Python 3.14, des de l'arrel del repositori:
+Des de l'arrel del repositori:
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r requirements.txt
-zensical serve
+uv sync --locked
+uv run --locked zensical serve
 ```
 
 Obriu `http://localhost:8000`. Per construir el lloc i comprovar-lo:
 
 ```bash
-zensical build --clean
-python scripts/check_zensical_site.py
+uv run --locked zensical build --clean
+uv run --locked python scripts/check_zensical_site.py
 ```
 
 El resultat es genera a `site/`. GitHub Actions utilitza les mateixes versions i

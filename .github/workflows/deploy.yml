@@ -20,15 +20,16 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
+          enable-cache: true
           python-version: "3.14"
 
-      - run: python -m pip install -r requirements.txt
+      - run: uv sync --locked
 
-      - run: zensical build --clean
+      - run: uv run --locked zensical build --clean
 
-      - run: python scripts/check_zensical_site.py
+      - run: uv run --locked python scripts/check_zensical_site.py
 
       - uses: actions/upload-pages-artifact@v3
         with:

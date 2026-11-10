@@ -1,4 +1,9 @@
 {
+    // Aquest repositori només utilitza Python per als scripts de suport; no necessita Pyrefly ni Ruff.
+
+    //
+    // Spell-check
+    //
     "cSpell.words": [
         "abans",
         "actiu",
