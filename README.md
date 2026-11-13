@@ -20,9 +20,10 @@ uv run --locked zensical build --clean
 uv run --locked python scripts/check_zensical_site.py
 ```
 
-El resultat es genera a `site/`. GitHub Actions utilitza les mateixes versions i
-ordres per preparar la publicació a GitHub Pages. La primera versió de producció
-i el desplegament a Edison continuen pendents.
+El resultat es genera a `site/`. GitHub Actions executa les mateixes ordres per
+validar la build i el contingut a cada pull request i als canvis a `main`. El
+desplegament es fa amb el contenidor de Dokploy, que obté el contingut d'aquest
+repositori i el construeix amb Zensical.
 
 ## Hooks locals
 

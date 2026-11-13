@@ -19,7 +19,7 @@ tags:
 
 ## Resum
 
-S'ha mogut el directori de dades del contenidor `etl-postgres` des del volum Docker local al disc dedicat muntat a `/mnt/HC_Volume_103924452`. La migració s'ha completat i s'ha confirmat que funciona.
+S'ha mogut el directori de dades del contenidor `etl-postgres` (al qual hi és allotjada la BD amb l'esquema **develrw**) des del volum Docker local al disc dedicat muntat a `/mnt/HC_Volume_103924452`. La migració s'ha completat i s'ha confirmat que funciona.
 
 El contenidor utilitza la imatge `timescale/timescaledb:2.11.2-pg15`. PostgreSQL continua veient les dades a `/var/lib/postgresql/data`; només ha canviat la ruta d'origen al servidor.
 
@@ -114,19 +114,3 @@ Abans del desplegament al nou servidor:
 - Verificar que PostgreSQL no s'inicia sobre un directori buit del disc del sistema si el disc de dades no està muntat.
 
 Un *bind mount* no copia les dades ni les transporta entre servidors: només connecta una ruta existent de l'amfitrió amb una ruta del contenidor.
-
-## Tornada enrere
-
-Conservar el volum Docker antic fins que la instal·lació nova hagi estat validada. Per tornar-hi:
-
-1. Aturar el contenidor nou.
-2. Canviar al Compose el muntatge de dades a:
-
-    ```yaml
-    - etl-postgres-pgdata:/var/lib/postgresql/data
-    ```
-
-3. Fer *redeploy*.
-
-!!! note "Tornada enrere"
-    No executar les dues ubicacions alhora sobre la mateixa instància. Si s'han escrit dades noves al disc dedicat després de la migració, la còpia antiga no inclourà aquests canvis; caldrà tenir-ho en compte abans de tornar enrere.

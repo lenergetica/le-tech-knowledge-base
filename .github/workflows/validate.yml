@@ -1,18 +1,17 @@
-name: Deploy Zensical
+name: Validate Zensical
 
 on:
+  pull_request:
   push:
     branches:
       - main
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
 
-  deploy:
+  validate:
 
     runs-on: ubuntu-latest
 
@@ -30,9 +29,3 @@ jobs:
       - run: uv run --locked zensical build --clean
 
       - run: uv run --locked python scripts/check_zensical_site.py
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-      - uses: actions/deploy-pages@v4
