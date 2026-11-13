@@ -19,9 +19,9 @@ nav = [
         ] },
         { "Postgres" = [
             { "Configurar postgres_fdw" = "01/postgres/configurar-postgres_fdw.md" },
-            { "Operació Barman Hall" = "01/postgres/operacio-barman-hall.md" },
-            { "Moure BD Hall a un volum dedicat" = "01/postgres/moure-bd-Hall-a-volum-dedicat.md" },
+            { "Muntar BD Hall a volum dedicat" = "01/postgres/moure-bd-Hall-a-volum-dedicat.md" },
             { "Restaurar BD develrw a Hall" = "01/postgres/restaurar-develrw-a-Hall.md" },
+            { "Backup Hall (Operació Barman)" = "01/postgres/operacio-barman-hall.md" },
         ] },
     ] },
     { "02 - Processos de negoci" = [
