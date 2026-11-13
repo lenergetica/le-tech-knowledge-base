@@ -1,7 +1,7 @@
 ---
 title: "Migració de BD PostgreSQL/TimescaleDB a un volum dedicat"
 author: "L'Energètica"
-reviewed_by: "joseantonioarias"
+reviewed_by: "J.A. Arias"
 owner: "Equip de Tecnologia de L'Energètica"
 status: "draft"
 version: "1.0"
@@ -15,7 +15,7 @@ tags:
     - "migracio"
 ---
 
-# Migració de BD PostgreSQL/TimescaleDB a un volum dedicat
+# Moure BD de Hall a un volum dedicat
 
 ## Resum
 
