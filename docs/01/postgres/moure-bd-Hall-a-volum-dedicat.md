@@ -3,16 +3,16 @@ title: "Migració de BD PostgreSQL/TimescaleDB a un volum dedicat"
 author: "L'Energètica"
 reviewed_by: "J.A. Arias"
 owner: "Equip de Tecnologia de L'Energètica"
-status: "draft"
+status: "active"
 version: "1.0"
 creation_date: "2026-11-03"
-review_date: "2026-11-05"
+review_date: "2026-11-13"
 review_after_months: 60
 tags:
     - "postgresql"
     - "timescaledb"
     - "hall"
-    - "migracio"
+    - "migració"
 ---
 
 # Moure BD de Hall a un volum dedicat
