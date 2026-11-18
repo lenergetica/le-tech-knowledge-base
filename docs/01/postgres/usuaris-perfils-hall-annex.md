@@ -64,12 +64,6 @@ Establir interactivament la contrasenya de cada compte nou; per exemple:
 Repetir-ho per a la resta de comptes nous. No desar contrasenyes a la KB ni
 compartir les credencials personals amb processos de cron.
 
-Per preparar les credencials a KeePass, utilitzar el
-[CSV d'usuaris i perfils](../../scripts/postgres/hall_usuaris_rols.csv), amb
-les columnes `usuari` i `rol`, onze comptes personals i dos de servei. El camp
-`rol` identifica el perfil de permisos; el login de connexió és `usuari`.
-El CSV no inclou contrasenyes.
-
 La [plantilla de fórmules per generar el SQL](../../scripts/postgres/set_hall_passwords.template.sql)
 conté només tretze fórmules d'Excel, sense capçalera ni comentaris. Tot i
 conservar l'extensió `.sql`, el fitxer és una plantilla per enganxar a Excel,
