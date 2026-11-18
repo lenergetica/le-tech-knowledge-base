@@ -6,7 +6,7 @@ owner: "Equip de Tecnologia de L'Energètica"
 status: "draft"
 version: "1.0"
 creation_date: "2026-11-17"
-review_date: "2026-11-17"
+review_date: "2026-11-18"
 review_after_months: 60
 tags:
   - "postgresql"
@@ -316,11 +316,13 @@ Les proves de regressió són a
 
 Vuit tasques van fallar abans de la correcció. L'usuari va autoritzar-ne la
 recuperació, iniciada el 17/11/2026 a les 20:49:50, Europe/Madrid, amb les
-ordres originals del cron, el wrapper i el compte de servei d'ETL. S'executen
-una a una. El coordinador i el supervisor eviten duplicats i aturen el lot
-si detecten un codi de sortida incorrecte, una traça d'excepció o un error SQL.
+ordres originals del cron, el wrapper i el compte de servei d'ETL. S'han executat
+una a una. El lot ha finalitzat el **18/11/2026 a les 01:59:10, Europe/Madrid**,
+amb les vuit tasques correctes. El supervisor ha registrat `lot_completat`
+a les 01:59:29. No s'han detectat traces d'excepció ni errors SQL o
+d'autenticació als logs de les recuperacions.
 
-Estat observat a **17/11/2026 22:21:18**, Europe/Madrid:
+Resultat final comprovat el **18/11/2026**:
 
 | Tasca | Estat | Codi de sortida |
 |---|---|---|
@@ -329,11 +331,12 @@ Estat observat a **17/11/2026 22:21:18**, Europe/Madrid:
 | `ree_simel_mcilqh_hall` | Correcta | 0 |
 | `ree_simel_cilcauos_hall` | Correcta | 0 |
 | `apigisce_tgf1_hall` | Correcta | 0 |
-| `apigisce_tgp1_hall` | En execució | — |
-| `ree_liqene_reganecu_hall` | En cua | — |
-| `pig_brp_hall` | En cua | — |
+| `apigisce_tgp1_hall` | Correcta | 0 |
+| `ree_liqene_reganecu_hall` | Correcta | 0 |
+| `pig_brp_hall` | Correcta | 0 |
 
-Aquest és un estat datat. Per al resultat vigent, consultar els fitxers:
+Els registres conserven els codis de sortida, les hores, les durades i les
+rutes dels logs de les vuit execucions:
 
 ```text
 /home/energetica/cron_log/recovery_20261117_e36fd2118e.json
@@ -351,11 +354,12 @@ El supervisor desconnectat és a:
 /home/energetica/backups/hall-service-routing-20261117-sc_y_kzh/recovery_supervisor_20261117.py
 ```
 
-El lot continua independentment del xat. El supervisor observa el coordinador
-original i, si aquest desapareix, espera qualsevol tasca ja iniciada i continua
-amb les pendents. No és un servei que es reiniciï automàticament després de
-recrear el contenidor: en aquest cas, revisar processos i manifest abans de
-reprendre'l. No donar una tasca per recuperada només perquè s'hagi llançat.
+La supervisió s'ha executat independentment del xat: observava el coordinador
+original i estava preparada per esperar tasques ja iniciades i continuar les
+pendents sense duplicats. El lot ja està completat; no cal rellançar-lo.
+El supervisor no és un servei que es reiniciï automàticament després de
+recrear el contenidor. Per a qualsevol recuperació futura, revisar processos
+i manifest abans de reprendre-la i verificar sempre els resultats finals.
 
 ## Còpies de seguretat i versió anterior de la guia
 

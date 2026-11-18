@@ -20,7 +20,6 @@ nav = [
         { "Postgres" = [
             { "Configurar postgres_fdw" = "01/postgres/configurar-postgres_fdw.md" },
             { "Usuaris i perfils a HALL" = "01/postgres/usuaris-perfils-hall.md" },
-            { "Annex operatiu dels accessos a HALL" = "01/postgres/usuaris-perfils-hall-annex.md" },
             { "Muntar BD Hall a volum dedicat" = "01/postgres/moure-bd-Hall-a-volum-dedicat.md" },
             { "Restaurar BD develrw a Hall" = "01/postgres/restaurar-develrw-a-Hall.md" },
             { "Backup Hall (Operació Barman)" = "01/postgres/operacio-barman-hall.md" },

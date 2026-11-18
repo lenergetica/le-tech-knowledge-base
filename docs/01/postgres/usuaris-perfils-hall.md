@@ -6,7 +6,7 @@ owner: "Equip de Tecnologia de L'Energètica"
 status: "draft"
 version: "1.0"
 creation_date: "2026-11-17"
-review_date: "2026-11-17"
+review_date: "2026-11-18"
 review_after_months: 60
 tags:
   - "postgresql"
@@ -49,11 +49,19 @@ executen localment. Per configurar DBCode, es pot duplicar una connexió de
 HALL ja validada i canviar-ne l'usuari i la contrasenya, conservant la ruta
 de connexió o túnel corresponent.
 
-Les regles d'autenticació autoritzen els membres dels dos perfils des de
-l'origen `172.18.0.1` que veu PostgreSQL en el recorregut validat a HALL,
-amb `scram-sha-256`. L'accés des d'altres orígens requereix revisar-ne la ruta
-i `pg_hba.conf`. L'endpoint PostgreSQL de HALL té TLS desactivat en l'estat
-observat; la connexió directa de HALL a PRO s'ha verificat amb TLS.
+Les regles d'autenticació autoritzen els membres dels dos perfils amb
+`scram-sha-256` des dels orígens que veu PostgreSQL:
+
+- `172.18.0.1`: passarel·la `docker_gwbridge` de HALL, observada en els crons
+  i les connexions locals validades.
+- `10.46.0.6`: origen compartit observat a les connexions de `joseantonioarias`
+  i `joansegura`. HALL hi arriba per WireGuard; no identifica necessàriament
+  la IP VPN individual de l'ordinador ni confirma que el client usi VPN.
+
+Les dues regles s'han comprovat al servidor i les connexions personals des de
+`10.46.0.6` ja s'han validat. L'accés des d'altres orígens requereix revisar-ne
+la ruta i `pg_hba.conf`. L'endpoint PostgreSQL de HALL té TLS desactivat en
+l'estat observat; la connexió directa de HALL a PRO s'ha verificat amb TLS.
 
 ## Perfils de grup
 
@@ -253,13 +261,13 @@ seva retirada s'han de tractar separadament. No consta confirmat que el
   1.012 foreign tables de HALL i cap diferència d'esquema**.
 - Hi ha proves de regressió del helper per a caràcters especials i `search_path`.
 
-La recuperació de vuit execucions que van fallar per l'error de construcció
-manual de la URL està en curs. L'[annex de seguiment](usuaris-perfils-hall-annex.md#recuperacio-de-les-execucions-programades)
-identifica els registres de progrés i l'últim estat observat. El resultat
-d'aquest lot no s'ha de donar per completat només perquè s'hagi iniciat.
+La recuperació de les vuit execucions que van fallar per l'error de construcció
+manual de la URL **ha finalitzat el 18/11/2026 a les 01:59, Europe/Madrid**.
+Totes han retornat codi 0 i no s'hi han detectat traces d'excepció ni errors
+SQL o d'autenticació. L'[annex de seguiment](usuaris-perfils-hall-annex.md#recuperacio-de-les-execucions-programades)
+recull els resultats i els registres del lot completat.
 
-Els canvis de codi són aplicats als repositoris locals de HALL; no s'han fet
-commits ni publicacions durant aquesta sessió. Les proves controlades de DDL
+Els canvis de codi estan aplicats a HALL. Les proves controlades de DDL
 i dels permisos d'escriptura del perfil de dades es van ometre per decisió
 de l'usuari; això queda separat de la validació real de les tasques recuperades.
 
