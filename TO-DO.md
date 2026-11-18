@@ -1,6 +1,6 @@
 # Tasques pendents de la KB
 
-Darrera actualització: 2026-11-05.
+Darrera actualització: 2026-11-16.
 
 ## Publicació i contingut
 
@@ -9,6 +9,10 @@ Darrera actualització: 2026-11-05.
 - [ ] Confirmar la correspondència entre producció i preproducció a la
     [guia de l'API GISCE](docs/02/gisce/api-rest-gisce.md): els encapçalaments
     actuals barregen «producció (PRE)» i «preproducció (PRO)».
+- [ ] Actualitzar Zensical de `0.0.74` a `0.1.1` coordinadament: fixar-ne la
+    versió a `pyproject.toml`, regenerar `uv.lock` i actualitzar la imatge base
+    del contenidor Dokploy al repositori `le-monorepo`. Validar la build, el
+    contingut de la KB i el build Docker.
 
 ## Convencions i presentació
 
