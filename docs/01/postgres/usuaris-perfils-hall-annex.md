@@ -64,20 +64,6 @@ Establir interactivament la contrasenya de cada compte nou; per exemple:
 Repetir-ho per a la resta de comptes nous. No desar contrasenyes a la KB ni
 compartir les credencials personals amb processos de cron.
 
-La [plantilla de fórmules per generar el SQL](../../scripts/postgres/set_hall_passwords.template.sql)
-conté només tretze fórmules d'Excel, sense capçalera ni comentaris. Tot i
-conservar l'extensió `.sql`, el fitxer és una plantilla per enganxar a Excel,
-no SQL executable. Les fórmules segueixen l'ordre del CSV i llegeixen les
-contrasenyes d'`E2` a `E14`; enganxar-les, per exemple, a `F2:F14`.
-
-Cada fórmula genera una sentència `ALTER ROLE` per executar a HALL com a
-administrador. Si una contrasenya conté un apòstrof, duplicar-lo al literal
-SQL generat abans d'executar-lo; la fórmula amb concatenació directa no
-l'escapa automàticament. No desar el full amb contrasenyes ni el SQL generat
-a la KB; l'historial de l'editor i els logs SQL també poden registrar-lo.
-Les ordres interactives `\password` de `psql` continuen sent l'alternativa
-recomanada.
-
 ### 2. Mappings FDW
 
 Revisar l'[SQL dels mappings](../../scripts/postgres/configure_hall_profile_mappings.sql).
