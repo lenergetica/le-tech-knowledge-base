@@ -343,10 +343,6 @@ i manifest abans de reprendre-la i verificar sempre els resultats finals.
 
 ## Còpies de seguretat i versió anterior de la guia
 
-- [Document íntegre anterior a la reorganització](../../scripts/postgres/usuaris-perfils-hall-abans-reorganitzacio-20261117.md.bak).
-- Còpies prèvies del carregador, el wrapper i el helper SQL:
-  `/home/energetica/backups/hall-service-routing-20261117-sc_y_kzh/`.
-
 Les còpies de codi permeten recuperar els fitxers previs després de revisar
 si hi ha edicions posteriors que s'hagin de conservar. Restaurar el helper SQL
 antic reintroduiria l'error de caràcters especials. Una reversió de codi no
