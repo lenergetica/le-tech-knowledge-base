@@ -6,7 +6,7 @@ owner: "Equip de Tecnologia de L'Energètica"
 status: "active"
 version: "1.0"
 creation_date: "2026-11-17"
-review_date: "2026-11-18"
+review_date: "2026-11-19"
 review_after_months: 60
 tags:
   - "postgresql"
@@ -35,7 +35,7 @@ no descriuen canvis pendents d'executar automàticament.
 
 Revisar l'[SQL de perfils i usuaris](../../scripts/postgres/configure_hall_user_profiles.sql)
 i executar-lo amb `psql`, com a `postgres`, a HALL, BD `energetica`. El fitxer
-inclou els onze logins personals i els dos comptes de servei proposats.
+inclou els onze logins personals i els dos comptes de servei inicials. No inclou l’alta posterior de `develrw_lectura` i `svc_powerbi`, documentada a continuació.
 També estableix el rol actiu per defecte dels vuit comptes administradors.
 
 ```text
@@ -129,6 +129,187 @@ noves. El compte Linux del cron i el compte PostgreSQL són identitats
 diferents; el primer ha de poder llegir la configuració necessària.
 
 
+## Cas pràctic: alta de svc_powerbi per al bridge ODBC de Power BI (19/11/2026)
+
+L'usuari ha executat l'alta a HALL, ha substituït les credencials d'`energetica`
+per les de `svc_powerbi` al bridge ODBC de la màquina OMIE i ha confirmat el
+funcionament de Power BI. A Power BI Desktop s'utilitzen els comptes personals,
+amb els permisos que ja tenen assignats.
+
+El cas il·lustra les peces independents que cal configurar:
+
+| Peça | Funció en aquest cas |
+|---|---|
+| Perfil `develrw_lectura` (`NOLOGIN`) | Agrupa els permisos de lectura sobre els objectes |
+| Compte `svc_powerbi` (`LOGIN`) | Autentica les connexions del bridge ODBC i hereta el perfil |
+| Mapping de `svc_powerbi` a `energetica_pro` | Permet consultar les foreign tables amb la identitat remota `energetica` |
+| Regla de `pg_hba.conf` | Admet la connexió a HALL des de l'origen autoritzat |
+| Credencials al bridge ODBC d'OMIE | Fan que Power BI utilitzi el nou compte |
+
+Les comandes següents són referència de la configuració aplicada; no repetir-les
+sobre els rols o el mapping existents. Les ordres SQL s'han executat a la BD
+`energetica` de HALL com a `postgres`.
+
+### 1. Crear un perfil de lectura reutilitzable
+
+El perfil `develrw_dades` existent permet INSERT, UPDATE i DELETE. Per a les
+consultes de Power BI es va crear `develrw_lectura`, sense aquests permisos.
+`NOLOGIN` indica que és un grup de permisos, no el compte que s'autenticarà.
+
+```sql
+BEGIN;
+CREATE ROLE develrw_lectura NOLOGIN INHERIT;
+GRANT CONNECT ON DATABASE energetica TO develrw_lectura;
+GRANT USAGE ON SCHEMA develrw, public TO develrw_lectura;
+GRANT SELECT ON ALL TABLES IN SCHEMA develrw, public TO develrw_lectura;
+ALTER DEFAULT PRIVILEGES FOR ROLE energetica IN SCHEMA develrw
+    GRANT SELECT ON TABLES TO develrw_lectura;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+    GRANT SELECT ON TABLES TO develrw_lectura;
+GRANT USAGE ON FOREIGN SERVER energetica_pro TO develrw_lectura;
+COMMIT;
+```
+
+Els GRANT cobreixen els objectes existents. Els `ALTER DEFAULT PRIVILEGES`
+cobreixen els futurs objectes creats per `energetica` a `develrw` i per
+`postgres` a `public`; no s'apliquen automàticament a altres creadors.
+
+### 2. Crear el compte de servei i assignar-li el perfil
+
+```sql
+BEGIN;
+CREATE ROLE svc_powerbi LOGIN INHERIT;
+GRANT develrw_lectura TO svc_powerbi;
+COMMIT;
+```
+
+La contrasenya s'ha generat a KeePass i assignat al compte. Per a futures altes,
+`\password svc_powerbi` des de `psql` permet assignar-la interactivament sense
+guardar-la en una sentència SQL. No s'ha configurat `SET ROLE energetica` per
+a aquest compte. D'aquesta manera no adquireix les capacitats de propietari
+compartit dels administradors i conserva `current_user = svc_powerbi`.
+
+### 3. Crear el mapping per consultar PRO a través de HALL
+
+Els permisos SELECT sobre les foreign tables i USAGE sobre el servidor FDW
+no aporten per si sols les credencials remotes. Com que el rol actiu és
+`svc_powerbi`, necessita un mapping propi per consultar `public` de PRO.
+No necessita aquest mapping per llegir les taules locals de `develrw`.
+
+El mapping s'ha creat copiant les opcions del mapping local d'`energetica`,
+sense mostrar-les:
+
+```sql
+DO $$
+DECLARE
+    opcions text;
+BEGIN
+    SELECT string_agg(format('%I %L', o.option_name, o.option_value), ', ')
+    INTO opcions
+    FROM pg_user_mapping AS m
+    JOIN pg_foreign_server AS s ON s.oid = m.umserver
+    CROSS JOIN LATERAL pg_options_to_table(m.umoptions) AS o
+    WHERE s.srvname = 'energetica_pro'
+      AND m.umuser = 'energetica'::regrole;
+
+    IF opcions IS NULL THEN
+        RAISE EXCEPTION 'No existeix el mapping de referencia per a energetica';
+    END IF;
+
+    EXECUTE format(
+        'CREATE USER MAPPING FOR svc_powerbi SERVER energetica_pro OPTIONS (%s)',
+        opcions
+    );
+END;
+$$;
+```
+
+Cal incloure aquest mapping en futures rotacions de la contrasenya de PRO.
+
+### 4. Autoritzar l'origen de connexió a pg_hba.conf
+
+Amb el compte i els permisos creats encara va caldre autoritzar la connexió
+al `pg_hba.conf` de HALL. Les regles existents per a `+develrw_admin` i
+`+develrw_dades` no cobreixen el nou perfil: `develrw_lectura` no n'és membre.
+L'usuari va afegir aquesta regla i va confirmar que la connexió funcionava:
+
+```text
+host        energetica   +develrw_lectura               192.168.24.7/32  scram-sha-256
+```
+
+| Camp | Significat |
+|---|---|
+| `host` | Connexions TCP, amb SSL o sense, segons la configuració del servidor i del client |
+| `energetica` | Base de dades de destinació |
+| `+develrw_lectura` | Membres d'aquest perfil; el signe `+` indica membresia de rol |
+| `192.168.24.7/32` | Un únic origen admès, tal com el veu PostgreSQL |
+| `scram-sha-256` | Autenticació amb contrasenya SCRAM |
+
+La regla s'ha de situar abans de qualsevol regla que rebutgi aquesta connexió:
+PostgreSQL aplica la primera coincidència i no prova regles posteriors si
+l'autenticació falla. Cal aplicar el canvi a la configuració persistent del
+desplegament i fer que PostgreSQL el carregui; una edició efímera dins d'un
+contenidor es pot perdre quan es recreï.
+
+Aquesta autorització permet arribar a la BD, però no concedeix SELECT ni
+permisos d'escriptura: això ho determinen els GRANT del perfil. Igualment,
+tenir els GRANT correctes no substitueix una regla d'accés vàlida.
+
+La IP és l'origen observat per a aquesta connexió, que pot correspondre a un
+intermediari si hi ha NAT o túnels. Si canvia l'origen del bridge, cal revisar
+la regla. Aquesta alta no autoritza automàticament altres equips que executin
+Power BI Desktop.
+
+### 5. Actualitzar el bridge ODBC d'OMIE
+
+Al bridge ODBC de la màquina OMIE es van substituir les credencials compartides
+d'`energetica` per les de `svc_powerbi`, mantenint com a destinació HALL
+(`192.168.24.2:5432`), BD `energetica`. L'usuari va confirmar que Power BI
+funcionava amb el nou compte.
+
+Les connexions de Power BI Desktop utilitzen el compte personal de cadascú,
+amb els permisos del seu perfil i les regles d'accés corresponents. No cal
+compartir-hi la contrasenya del servei. El resum de la configuració actual és
+a la [guia principal](usuaris-perfils-hall.md#power-bi).
+
+### 6. Comprovar identitat i permisos efectius
+
+Executar amb una connexió nova com a `svc_powerbi`:
+
+```sql
+SELECT session_user AS usuari_connexio,
+       current_user AS rol_actiu,
+       pg_has_role(current_user, 'develrw_lectura', 'USAGE') AS perfil_lectura_actiu,
+       has_schema_privilege(current_user, 'develrw', 'USAGE') AS pot_accedir_develrw,
+       has_schema_privilege(current_user, 'develrw', 'CREATE') AS pot_crear_objectes;
+```
+
+Esperat: `svc_powerbi` a les dues identitats; `true`, `true`, `false`.
+
+```sql
+SELECT n.nspname AS esquema,
+       count(*) AS objectes,
+       bool_and(has_table_privilege(c.oid, 'SELECT')) AS pot_llegir_tots,
+       bool_or(
+           has_table_privilege(c.oid, 'INSERT')
+           OR has_table_privilege(c.oid, 'UPDATE')
+           OR has_table_privilege(c.oid, 'DELETE')
+           OR has_table_privilege(c.oid, 'TRUNCATE')
+       ) AS pot_modificar_algun
+FROM pg_class AS c
+JOIN pg_namespace AS n ON n.oid = c.relnamespace
+WHERE n.nspname IN ('develrw', 'public')
+  AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+GROUP BY n.nspname;
+```
+
+Esperat: `pot_llegir_tots = true` i `pot_modificar_algun = false` a tots dos
+esquemes. Les consultes es van facilitar a l'usuari; no s'han aportat els
+resultats a la conversa. La validació confirmada és el funcionament de Power BI.
+Els permisos existents de funcions i procediments es mantenen, com als altres
+perfils; no s'han afegit restriccions específiques per a aquest compte.
+
+
 ## Consulta d'identitat i de consultes actives
 
 A la connexió que es vol comprovar:
@@ -171,7 +352,7 @@ sense retirar un rol actiu per defecte incompatible pot causar errors de login.
 ## Referència per a futures rotacions de PRO
 
 La rotació del 17/11/2026 està completada. Per a una altra rotació, coordinar
-sempre aquests tres components: compte remot, sis mappings i configuració.
+sempre aquests tres components: compte remot, tots els mappings que el facin servir i configuració. Actualment són set mappings, inclòs el de `svc_powerbi`; en la rotació inicial eren sis.
 
 1. Preparar la nova credencial a KeePass i inventariar els mappings que
    utilitzin el compte remot. No imprimir-ne les opcions amb contrasenyes.
