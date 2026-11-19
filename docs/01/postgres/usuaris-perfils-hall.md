@@ -121,11 +121,16 @@ El rol ![Rol individual](../../images/dbcode/rol-individual.svg) `energetica` de
 de `develrw` i els seus objectes. Conserva `LOGIN`, però les connexions humanes
 habituals s'han de fer amb el compte personal (de fet no donem la contrasenya d'aquest rol).
 
-!!!info "`SET ROLE energetica`"
-    Tots els rols (personals i servei) amb el perfil `develrw_admin` tenen configurat
-    al servidor per a la BD `energetica` **`role=energetica` com a valor
-    per defecte de les connexions noves**. Els scripts no han d'executar un
-    `SET ROLE` manual per obtenir aquest comportament.
+Cada persona o servei es connecta amb el seu usuari i contrasenya, però PostgreSQL activa automàticament el rol energetica quan entra a la BD energetica de HALL.
+
+Ho vam configurar per a cada compte administrador i de servei amb una ordre com aquesta:
+
+```SQL
+ALTER ROLE juliaperona IN DATABASE energetica
+SET ROLE = 'energetica';
+```
+
+Això equival a executar SET ROLE energetica a l’inici de cada connexió, sense haver d’afegir-ho als scripts.
 
 | Connexió iniciada com a | session_user | current_user | Propietari dels objectes nous |
 |---|---|---|---|
@@ -148,6 +153,7 @@ configuració de rols no activa una auditoria automàtica de totes les accions.
     login i els objectes que creï a partir d'aquell moment li pertanyeran.
     `RESET ROLE` recupera el rol actiu configurat per a la connexió. Per canviar
     una persona al perfil de dades cal retirar també el rol actiu per defecte.
+    Els usuaris del perfil develrw_dades no tenen aquesta activació automàtica: treballen amb el seu usuari i els permisos heretats del grup.
 
 ## Selecció automàtica de credencials als scripts programats a crontab
 
