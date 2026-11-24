@@ -1,12 +1,12 @@
 ---
 title: "Restaurar develrw de PRO a HALL amb TimescaleDB i accés FDW a public"
-author: "joseantonioarias"
-reviewed_by: "joseantonioarias"
+author: "Jose Antonio Arias"
+reviewed_by: "Jose Antonio Arias"
 owner: "Equip de Tecnologia de L'Energètica"
 status: "draft"
 version: "1.0"
 creation_date: "2026-11-03"
-review_date: "2026-11-05"
+review_date: "2026-11-23"
 review_after_months: 60
 tags:
     - "postgresql"
@@ -150,19 +150,19 @@ IMPORT FOREIGN SCHEMA public FROM SERVER energetica_pro INTO public;
 RESET ROLE;
 ```
 
-Tot seguit, executeu el
-[SQL de permisos FDW](../../scripts/postgres/configure_develrw_fdw_permissions.sql):
+Per integrar la nova BD amb el reconciliador actual de HALL, manteniu
+`energetica` com a propietari de les foreign tables i amb `USAGE, CREATE` a
+`public`. Reviseu els perfils existents i apliqueu els permisos SELECT als
+objectes i als permisos per defecte del creador segons l’[annex operatiu](usuaris-perfils-hall-annex.md#propietat-i-reconciliacio-de-les-foreign-tables).
+Si els perfils encara no existeixen, completar primer la seva alta; no
+activar la reconciliació fins a verificar-ne els requisits. La identitat
+remota del mapping ha de conservar només lectura a PRO.
 
-```bash
-docker exec -i --user postgres "$CONTENIDOR_POSTGRES" \
-  psql -X -v ON_ERROR_STOP=1 -U postgres -d "$BD_DESTI" \
-  < docs/scripts/postgres/configure_develrw_fdw_permissions.sql
-```
-
-Aquest pas traspassa a `postgres` les taules foranes de `public`, concedeix
-`SELECT` a `energetica`, revoca els privilegis directes d'escriptura i li retira
-`CREATE` a `public`. Cal repetir-lo després de noves importacions. Verifiqueu
-els privilegis efectius al pas 8: els permisos heretats també compten.
+El [SQL històric de permisos FDW](../../scripts/postgres/configure_develrw_fdw_permissions.sql)
+transfereix les foreign tables a `postgres` i retira `CREATE` a `energetica`.
+Aquest comportament correspon al manteniment manual anterior i és incompatible
+amb el reconciliador: no executar-lo en aquest flux. Verifiqueu els permisos
+efectius al pas 8, inclosos els heretats.
 
 La [guia general de FDW](./configurar-postgres_fdw.md) explica la connexió i
 les consultes. Per a aquesta restauració, seguiu l'ordre i els permisos d'aquest

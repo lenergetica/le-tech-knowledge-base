@@ -1,12 +1,12 @@
 ---
 title: "Usuaris i perfils PostgreSQL a HALL"
-author: "L'Energètica"
-reviewed_by: "L'Energètica"
+author: "Jose Antonio Arias"
+reviewed_by: "Jose Antonio Arias"
 owner: "Equip de Tecnologia de L'Energètica"
 status: "active"
 version: "1.0"
 creation_date: "2026-11-17"
-review_date: "2026-11-19"
+review_date: "2026-11-23"
 review_after_months: 60
 tags:
   - "postgresql"
@@ -78,7 +78,7 @@ Sobre aquests perfils:
 - Els objectes nous creats per `energetica` a `develrw` concedeixen automàticament SELECT, INSERT, UPDATE i DELETE a `develrw_dades`, i l'ús i lectura de seqüències.
 - `develrw_lectura` té `CONNECT` a la BD, `USAGE` als esquemes `develrw` i `public`, SELECT a les taules i vistes existents i `USAGE` al servidor FDW `energetica_pro`. No hereta `develrw_dades` ni `energetica`.
 - Els objectes nous creats per `energetica` a `develrw` també concedeixen SELECT a `develrw_lectura`.
-- Les foreign tables noves importades per `postgres` a `public` concedeixen SELECT als tres perfils. Els permisos per defecte depenen del rol creador; no cobreixen automàticament objectes creats per altres rols.
+- El reconciliador importa les foreign tables de `public` amb el rol actiu `energetica`, que n’ha de ser el propietari. Cal configurar els permisos per defecte de **`energetica` a `public`** perquè els tres perfils conservin SELECT en les noves importacions. Els permisos per defecte històrics de `postgres` no cobreixen aquest creador; vegeu la [revisió de propietat i permisos](usuaris-perfils-hall-annex.md#propietat-i-reconciliacio-de-les-foreign-tables).
 - Les funcions i els procediments conserven els seus permisos existents; no s'hi han afegit restriccions. També es mantenen les regles pròpies de les vistes, els triggers i les eventuals polítiques de files.
 
 ## Comptes personals
@@ -162,7 +162,10 @@ validació específica de les actualitzacions programades de Power BI.
 ## Rol actiu, propietat compartida i identificació
 
 El rol ![Rol individual](../../images/dbcode/rol-individual.svg) `energetica` de HALL es manté com a propietari compartit
-de `develrw` i els seus objectes. Conserva `LOGIN`, però les connexions humanes
+de `develrw` i els seus objectes. El reconciliador requereix que també sigui
+propietari de les foreign tables de `public` del servidor `energetica_pro`;
+això no exigeix transferir-li la propietat del servidor FDW ni de l’esquema `public`.
+Conserva `LOGIN`, però les connexions humanes
 habituals s'han de fer amb el compte personal (de fet no donem la contrasenya d'aquest rol).
 
 Cada persona o servei es connecta amb el seu usuari i contrasenya. Per als comptes amb perfil `develrw_admin`, PostgreSQL activa automàticament el rol `energetica` quan entren a la BD `energetica` de HALL.
@@ -214,12 +217,14 @@ Es manté `/home/energetica/config.yml` com a **únic fitxer de configuració**.
 | postgresql_hall | energetica | HALL; compatibilitat amb execucions sense selecció |
 | postgresql_hall_etl | svc_energetica_etl | HALL; processos d'ETL |
 | postgresql_hall_comercialitzacio | svc_comercialitzacio | HALL; processos de Comercialització |
-| postgresql_prod_ro_fw | energetica | PRO; execució check_foreign_tables_public_hall.py |
+| postgresql_prod_public_ro | El definit al bloc de connexió | PRO; lectura de catàlegs per a `check_public_foreign_tables_hall.py` |
 
 ### run_cron_job.sh
 
-El wrapper és **`/home/energetica/run_cron_job.sh`**, un enllaç simbòlic a
-`/home/energetica/projectes/energetica_etl/run_cron_job.sh`.
+El wrapper operatiu és **`/home/energetica/run_cron_job.sh`**. En la revisió
+del 23/11/2026 és una còpia del fitxer del repositori
+`/home/energetica/projectes/energetica_etl/run_cron_job.sh`; cal mantenir-los
+sincronitzats en desplegar canvis.
 
 Identifica la ruta del repositori dins de la comanda que rep i exporta
 `POSTGRESQL_HALL_CONNECTION`:
@@ -251,13 +256,14 @@ Una selecció inexistent o que no sigui un bloc de configuració produeix error.
     `develrw` o `public`. Els canvis són al helper compartit i no requereixen
     editar cada script.
 
-## Accés a PRO i contrasenya renovada
+## Accés a l'esquema public de PRO
 
-HALL consulta PRO a través del servidor FDW **`energetica_pro`**, que apunta a
-`192.168.24.3:5432`, BD `energetica`. El compte remot és `energetica` i té
-lectura de les taules i vistes de `public`.
+Un cop completada la migració de l'esquema `develrw` des de PRO cap a HALL, a PRO només queda accessible l'esquema `public`. Però **els scripts ETL no poden accedir directament a la base de dades de PRO, sino que ho han de fer a través de les *foreign tables* definides a la BD de HALL**. La excepció es check_public_foreign_tables_hall.py (veure [check_public_foreign_tables_hall.py](#check_public_foreign_tables_hallpy))
 
-Hi ha **7 mappings** que utilitzen aquesta identitat remota:
+!!!note "servidor FDW **`energetica_pro`**"
+    La connexió a les taules i vistes de PRO es fa a través del servidor FDW **`energetica_pro`**, que apunta a `192.168.24.3:5432`, BD `energetica`. 
+    
+El compte remot és `energetica` i té permisos només de lectura de les taules i vistes de `public`. Hi ha **7 mappings** que utilitzen aquesta identitat remota:
 
 - El mapping local d'`energetica`, utilitzat pels administradors i serveis
   amb perfil `develrw_admin` quan aquest és el seu rol actiu.
@@ -265,11 +271,37 @@ Hi ha **7 mappings** que utilitzen aquesta identitat remota:
   `blancaperez` i `paulaferrate`, utilitzats pel perfil de `develrw_dades`.
 - El mapping de `svc_powerbi`, utilitzat amb el perfil `develrw_lectura`.
 
+## check_public_foreign_tables_hall.py
+
 L'excepció d'accés directe a PRO és
-`energetica_etl/develrw/check_public_foreign_tables_hall.py`. Utilitza
-`postgresql_prod_ro_fw` per llegir els catàlegs de PRO i `postgresql_hall`
-per comparar-los amb les foreign tables de HALL. Executat pel wrapper d'ETL,
-aquesta segona connexió utilitza `svc_energetica_etl`.
+`energetica_etl/develrw/check_public_foreign_tables_hall.py`, que utilitza explícitament la connexió `postgresql_prod_public_ro` per revisar els
+catàlegs de PRO i comparar-los amb les `foreign tables` de HALL.
+
+La connexió de servei s’autentica com a `svc_energetica_etl` i ha d’actuar com a
+`energetica`. El procés comprova la BD, la propietat de totes les foreign tables
+gestionades, els permisos de creació i el mapping abans de reconciliar.
+Afegeix i elimina foreign tables, corregeix mapatges i columnes, i reimporta una
+taula si cal per reproduir l’ordre de columnes de PRO. Ho fa en una transacció
+amb verificació final i sense `CASCADE`; una dependència que impedeixi el canvi
+provoca rollback.
+
+El resultat és `OK` (codi `0`) tant si no hi ha diferències com si s’han
+corregit, verificat i confirmat. Només en aquest segon cas el log conté
+`INFO: FDW sincronitzat;`. Si no es pot completar, el resultat és `FAIL`
+(codi no zero). `INFO` és el nivell del missatge, no un prefix de fitxer.
+
+El comportament acordat del monitor d’Edison omet el bloc FDW quan no hi ha canvis,
+mostra **FDW sincronitzat** quan hi ha correccions confirmades i
+**FDW no s’ha pogut sincronitzar** quan falla aquesta tasca. Vegeu les
+[instruccions del monitor](usuaris-perfils-hall-annex.md#actualitzacio-manual-del-monitor-de-correu-a-edison).
+Els requisits i les consultes de verificació són a l’[annex operatiu](usuaris-perfils-hall-annex.md#propietat-i-reconciliacio-de-les-foreign-tables).
+
+!!! warning "Propietat local i lectura remota"
+    `energetica` i els administradors que l’hereten poden modificar les definicions
+    locals de les foreign tables i concedir-hi permisos. Els REVOKE sobre el
+    propietari no eliminen aquesta capacitat. La lectura de PRO requereix mantenir
+    els permisos remots de només lectura; la propietat local no és una barrera
+    contra l’escriptura remota si el compte del mapping hi té permisos.
 
 !!! warning "Límit acceptat: la rotació no força l'accés exclusiu via FDW"
     Els usuaris autoritzats poden consultar les credencials dels mappings que

@@ -6,7 +6,7 @@ owner: "Equip de Tecnologia de L'Energètica"
 status: "active"
 version: "1.0"
 creation_date: "2026-11-17"
-review_date: "2026-11-19"
+review_date: "2026-11-23"
 review_after_months: 60
 tags:
   - "postgresql"
@@ -117,8 +117,9 @@ Amb un usuari de dades, tots dos valors han de ser el seu login personal.
 Provar amb sessions noves de cada perfil l'accés a una foreign table i les
 operacions autoritzades sobre taules de prova. Comprovar que els usuaris de
 dades no poden fer DDL ni TRUNCATE i que cap dels dos perfils pot escriure a
-les foreign tables. Aquesta configuració no afegeix permisos d'escriptura a
-`public`; altres permisos preexistents s'han de revisar abans d'activar comptes
+les foreign tables. Els administradors que actuen com a propietari poden gestionar les definicions
+FDW i recuperar permisos locals; cal comprovar també la lectura al compte remot
+de PRO. Altres permisos preexistents s'han de revisar abans d'activar comptes
 reutilitzats. La possibilitat de crear taules temporals no es modifica.
 
 La selecció dels comptes de servei ja està aplicada al wrapper i al carregador
@@ -171,8 +172,10 @@ COMMIT;
 ```
 
 Els GRANT cobreixen els objectes existents. Els `ALTER DEFAULT PRIVILEGES`
-cobreixen els futurs objectes creats per `energetica` a `develrw` i per
-`postgres` a `public`; no s'apliquen automàticament a altres creadors.
+cobrien els futurs objectes creats per `energetica` a `develrw` i per
+`postgres` a `public` en aquesta alta. Amb el reconciliador actual, el creador
+de les foreign tables és `energetica`: cal revisar també els permisos per
+defecte d’aquest rol a `public`, tal com es descriu a l’apartat següent.
 
 ### 2. Crear el compte de servei i assignar-li el perfil
 
@@ -310,6 +313,202 @@ Els permisos existents de funcions i procediments es mantenen, com als altres
 perfils; no s'han afegit restriccions específiques per a aquest compte.
 
 
+## Propietat i reconciliació de les foreign tables
+
+Revisió estàtica del codi local d’`energetica_etl` del **23/11/2026**. El
+comprovador `develrw/check_public_foreign_tables_hall.py` ara corregeix
+l’esquema FDW. Els passos següents són referència per revisar o completar la
+configuració; no s’han executat sobre les bases de dades en aquesta revisió.
+
+### Connexions i requisits
+
+| Element | Requisit del codi |
+|---|---|
+| Catàleg de PRO | Clau explícita `postgresql_prod_public_ro`, amb accés de lectura a `public` |
+| Connexió a HALL | Clau explícita `postgresql_hall_etl`, BD `energetica` |
+| Identitat a HALL | Login previst `svc_energetica_etl`; el codi valida `current_user = energetica`, però no comprova `session_user` |
+| Esquema local `public` | `USAGE` i `CREATE` per a `energetica` |
+| Servidor `energetica_pro` | `USAGE` i mapping propi per a `energetica` |
+| Foreign tables gestionades | Totes les de `public` associades a `energetica_pro`, propietat d’`energetica` |
+
+El procés rebutja la connexió si la BD o el rol actiu són incorrectes, o si
+falta algun dels permisos, el mapping o la propietat. No transfereix la
+propietat automàticament. El propietari del servidor FDW i el de l’esquema
+`public` poden continuar sent diferents del propietari de les foreign tables.
+
+Per inventariar la propietat sense exposar opcions dels mappings:
+
+```sql
+SELECT n.nspname AS esquema, c.relname AS foreign_table,
+       pg_get_userbyid(c.relowner) AS propietari, s.srvname AS servidor
+FROM pg_class AS c
+JOIN pg_namespace AS n ON n.oid = c.relnamespace
+JOIN pg_foreign_table AS ft ON ft.ftrelid = c.oid
+JOIN pg_foreign_server AS s ON s.oid = ft.ftserver
+WHERE n.nspname = 'public' AND s.srvname = 'energetica_pro'
+ORDER BY c.relname;
+```
+
+Si cal migrar la propietat, revisar primer aquest inventari i executar com a
+administrador a HALL, BD `energetica`, únicament per a les foreign tables del
+servidor gestionat:
+
+```sql
+BEGIN;
+GRANT USAGE, CREATE ON SCHEMA public TO energetica;
+GRANT USAGE ON FOREIGN SERVER energetica_pro TO energetica;
+DO $$
+DECLARE
+    taula record;
+BEGIN
+    FOR taula IN
+        SELECT n.nspname, c.relname
+        FROM pg_class AS c
+        JOIN pg_namespace AS n ON n.oid = c.relnamespace
+        JOIN pg_foreign_table AS ft ON ft.ftrelid = c.oid
+        JOIN pg_foreign_server AS s ON s.oid = ft.ftserver
+        WHERE n.nspname = 'public'
+          AND s.srvname = 'energetica_pro'
+          AND c.relowner <> 'energetica'::regrole
+    LOOP
+        EXECUTE format('ALTER FOREIGN TABLE %I.%I OWNER TO energetica',
+                       taula.nspname, taula.relname);
+    END LOOP;
+END;
+$$;
+GRANT SELECT ON ALL TABLES IN SCHEMA public
+    TO develrw_admin, develrw_dades, develrw_lectura;
+ALTER DEFAULT PRIVILEGES FOR ROLE energetica IN SCHEMA public
+    GRANT SELECT ON TABLES TO develrw_admin, develrw_dades, develrw_lectura;
+COMMIT;
+```
+
+La transferència de propietat no substitueix els permisos sobre objectes
+existents ni els permisos per defecte del nou creador. Els antics
+`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public` poden conservar-se
+per a importacions com a `postgres`, però no cobreixen les d’`energetica`.
+El reconciliador només afegeix SELECT explícit per a `energetica` després
+d’importar; no configura els GRANT dels tres perfils. Per això cal revisar-los
+abans que una reimportació substitueixi una foreign table amb permisos particulars.
+
+### Canvis automàtics i resultats
+
+El procés llegeix les taules, taules particionades, vistes i vistes
+materialitzades de `public` de PRO. A HALL només gestiona les foreign tables
+de `public` del servidor `energetica_pro`:
+
+- Importa les relacions noves i elimina les que ja no consten a PRO.
+- Ajusta les opcions `schema_name` i `table_name` i afegeix, elimina o modifica
+  columnes, tipus i nul·labilitat amb `ALTER FOREIGN TABLE` quan és possible.
+- Elimina i reimporta la foreign table quan els canvis anteriors no permeten
+  reproduir l’ordre de columnes de PRO.
+- Avorta si un nom necessari ja correspon a un objecte local o a una foreign
+  table d’un altre servidor. No substitueix aquests objectes.
+
+Utilitza un bloqueig assessor transaccional amb el nom
+`check_public_foreign_tables_hall`. Els canvis a HALL i la comprovació posterior
+es fan en una sola transacció; si hi ha errors o diferències residuals es fa
+rollback. Les eliminacions són `RESTRICT`, sense `CASCADE`: les dependències
+poden impedir una eliminació o reimportació. El procés compara amb la lectura
+inicial de PRO; no constitueix una transacció compartida entre les dues BD.
+
+| Resultat | Codi de l’script | Log del wrapper | Codi del wrapper |
+|---|---|---|---|
+| Cap diferència | `0` | `OK_...` | `0` |
+| Diferències corregides, verificades i confirmades | `0` | `OK_...` | `0` |
+| Error, conflicte o canvi impedit per dependències | No zero | `FAIL_...` | Conserva el codi |
+
+Les línies `AVÍS` anuncien diferències o canvis previstos. Després del commit,
+el reconciliador escriu el detall amb `INFO: diferència corregida i verificada:`
+i el resum `INFO: FDW sincronitzat;`. `INFO` és el nivell del missatge; el log
+és `OK_...` i tant l’script com el wrapper retornen `0`. Si no hi ha diferències,
+no s’emet el resum de sincronització. Qualsevol codi no zero és `FAIL`.
+
+El wrapper continua arxivant els antics logs `INFO_...` a `z_historic`, però
+ja no en crea de nous. Permet canviar el directori de logs amb `ETL_LOG_DIR`.
+L’usuari ha confirmat el **23/11/2026** que el funcionament del monitor del
+correu a Edison està verificat. El manteniment manual es descriu a
+l’[apartat següent](#actualitzacio-manual-del-monitor-de-correu-a-edison).
+No s’ha executat el reconciliador en aquesta revisió: pot modificar les
+definicions FDW de HALL.
+
+## Actualització manual del monitor de correu a Edison
+
+El monitor operatiu és `/opt/scripts/log_monitor_hall.sh` a Edison.
+L’usuari ha confirmat el **23/11/2026** que hi ha traslladat l’script i que
+el funcionament està verificat. També ha confirmat que ha eliminat expressament
+la còpia local `monitoring/log_monitor_hall.sh` del repositori d’`energetica_etl`.
+El monitor es manté a Edison; recuperar o versionar aquesta còpia local no és
+cap tasca pendent.
+
+Abans d’editar l’script a Edison, fer-ne una còpia de seguretat amb `cp -p` i
+conservar els permisos. Si es rep la nova versió en un fitxer temporal,
+validar-la amb `bash -n` abans de substituir l’actual. El cron que apunta
+al mateix fitxer utilitzarà el contingut nou en la següent execució.
+Amb el disseny acordat, la plantilla `/opt/scripts/templates/log_report_hall.html` no necessita canvis:
+els blocs FDW s’afegeixen abans de la secció general d’errors.
+
+Comportament acordat:
+
+- Si no s’han corregit diferències ni hi ha errors FDW, ometre tot el bloc FDW.
+- Si un log `OK_*_check_public_foreign_tables_hall_*` conté
+  `INFO: FDW sincronitzat;`, mostrar **FDW sincronitzat** amb el nom del fitxer.
+  Aquesta execució compta només com a `OK`.
+- Si hi ha un log `FAIL_*_check_public_foreign_tables_hall_*`, mostrar
+  **FDW no s’ha pogut sincronitzar** amb el nom del fitxer.
+- Si diferents execucions del període tenen resultats diferents, mostrar
+  els dos blocs amb els seus fitxers. Els errors d’altres ETL no generen
+  un bloc FDW: apareixen a la secció general d’errors.
+
+Es conserven els recomptes `RUN`, `OK` i `FAIL`, l’assumpte original, Barman,
+els destinataris i el relay SMTP. Una correcció amb èxit conserva l’assumpte
+`[OK]` si no hi ha errors ETL ni de Barman; els errors mantenen `[ALERTA]`.
+No hi ha comptador `INFO` addicional. El nom de tasca ha de conservar
+`check_public_foreign_tables_hall` perquè el monitor reconegui els seus logs.
+Es manté `find -maxdepth 1 -mmin -1440`, que exclou `z_historic`:
+és una vista dels logs presents modificats les últimes 24 hores, no un
+recompte exhaustiu de totes les execucions del dia.
+
+Validació manual a Edison després de substituir el fitxer:
+
+```bash
+bash -n /opt/scripts/log_monitor_hall.sh
+/opt/scripts/log_monitor_hall.sh --dry-run > /tmp/log_report_hall_preview.eml
+less /tmp/log_report_hall_preview.eml
+```
+
+`--dry-run` evita SMTP, però continua consultant HALL per SSH i Barman per
+Docker. El fitxer local `develrw/tests/test_log_monitor_hall.py` conserva set
+casos amb dobles d’aquestes eines, utilitzats per comprovar la generació del
+correu sense enviaments ni canvis a les bases de dades. Depèn de la còpia
+local eliminada expressament i queda fora de la validació local actual;
+no és una tasca pendent recuperar-la per executar-lo. La descoberta completa
+de tests encara inclouria aquest fitxer i fallaria per la seva dependència:
+per validar la part ETL, executar només els tests de reconciliació i del
+wrapper, com indica el README. El monitor es valida i es manté a Edison.
+
+### Mostres manuals i criteris d’acceptació
+
+| Escenari | Log | Resultat al correu |
+|---|---|---|
+| PRO i HALL ja coincideixen | `OK_...`, sense resum de correcció | Cap bloc FDW |
+| S’han corregit i confirmat diferències | `OK_...`, amb `INFO: FDW sincronitzat;` | **FDW sincronitzat** |
+| Falla la tasca de reconciliació | `FAIL_...check_public_foreign_tables_hall_...` | **FDW no s’ha pogut sincronitzar** i error al recompte general |
+| Falla una altra ETL | `FAIL_...` d’una altra tasca | Només la secció general d’errors |
+
+Un fitxer de prova dins del directori real `cron_log` participa en el correu
+igual que un log real mentre compleixi el filtre temporal. Les mostres han
+d’indicar explícitament que no s’ha executat SQL i que els objectes són ficticis.
+En acabar, retirar-les del directori principal perquè no alterin els recomptes
+ni provoquin alertes posteriors. Les dues mostres `*_prova_simulada*` creades
+durant la conversa ja no són presents en la revisió del 23/11/2026.
+
+El funcionament a Edison queda registrat com a verificat per confirmació
+de l’usuari del **23/11/2026**. No s’han repetit les proves remotes des d’aquest
+entorn. Per a futures validacions, un `--dry-run` correcte comprova la generació;
+no acredita per si sol el lliurament SMTP. La retirada intencionada de la
+còpia local no deixa cap desplegament ni validació pendent a Edison.
+
 ## Consulta d'identitat i de consultes actives
 
 A la connexió que es vol comprovar:
@@ -359,8 +558,11 @@ sempre aquests tres components: compte remot, tots els mappings que el facin ser
 2. El mateix `energetica` de PRO pot canviar-se la contrasenya pròpia; no cal
    superusuari per a aquesta operació. Amb `psql`, `\password energetica`
    evita escriure la contrasenya literal a la sentència de l'historial.
-3. Actualitzar els mappings amb `ALTER USER MAPPING`, i `password` dins de
-   `postgresql_prod_ro_fw` al YAML compartit. No tornar a crear els mappings.
+3. Actualitzar els mappings amb `ALTER USER MAPPING` i els blocs del YAML que
+   utilitzin el mateix compte remot. El reconciliador actual demana
+   `postgresql_prod_public_ro`; `postgresql_prod_ro_fw` és el nom històric de
+   la rotació inicial. Comprovar l’usuari de cada bloc abans de decidir quina
+   credencial cal renovar. No tornar a crear els mappings.
 4. Provar connexions noves amb la credencial nova, rebuig de l'antiga, lectura
    amb cada mapping i execució del comprovador a través del wrapper.
 5. Si es volen tancar sessions anteriors, revisar-les expressament: la rotació

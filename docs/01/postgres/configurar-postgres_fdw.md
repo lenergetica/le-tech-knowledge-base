@@ -1,13 +1,13 @@
 ---
 title: "Configurar postgres_fdw"
 author: "joseantonioarias"
-reviewed_by: "joseantonioarias"
+reviewed_by: "Jose Antonio Arias"
 owner: "Equip de Tecnologia de L'Energètica"
-status: "draft"
+status: "active"
 version: "1.0"
 creation_date: "2026-10-05"
-review_date: "2026-11-05"
-review_after_months: 1
+review_date: "2026-11-23"
+review_after_months: 12
 tags:
     - "postgresql"
     - "hall"
@@ -26,6 +26,14 @@ tags:
     [procediment de restauració](./restaurar-develrw-a-Hall.md), que fixa l'ordre
     dels passos i els permisos finals. La guia següent és per a una configuració
     FDW independent; no cal crear `develrw` per utilitzar FDW.
+
+!!! note "Propietat per a la sincronització automàtica de HALL"
+    El reconciliador actual d’`energetica_etl` necessita que les foreign tables
+    de `public` del servidor `energetica_pro` pertanyin a `energetica`, amb
+    `USAGE, CREATE` a `public`. La configuració de propietat i els permisos
+    dels perfils es descriuen a l’[annex operatiu](usuaris-perfils-hall-annex.md#propietat-i-reconciliacio-de-les-foreign-tables).
+    No aplicar-hi el SQL històric que les transfereix a `postgres` i retira
+    `CREATE`: impediria la reconciliació automàtica.
 
 ## Com ho configurem? (exemple a HALL)
 
@@ -123,19 +131,18 @@ En aquest cas, volem que l'esquema `public` de HALL apunti a l'esquema `public` 
     INTO public;
     ```
 
-1. Per deixar l'accés local a les taules foranes només de lectura, executem
-    com a `postgres` el [SQL de permisos FDW](../../scripts/postgres/configure_develrw_fdw_permissions.sql):
+1. Per integrar aquestes foreign tables amb el reconciliador de HALL,
+    manteniu `energetica` com a propietari i amb `USAGE, CREATE` a `public`.
+    Reviseu i apliqueu els permisos existents i per defecte dels tres perfils
+    segons l’[annex operatiu](usuaris-perfils-hall-annex.md#propietat-i-reconciliacio-de-les-foreign-tables).
+    El compte remot del mapping ha de conservar només lectura a PRO.
+    El propietari local pot modificar les definicions i recuperar permisos;
+    revocar-li escriptura local no substitueix els permisos remots.
 
-    ```bash
-    docker exec -i --user postgres ID_DEL_CONTENIDOR_POSTGRES \
-      psql -X -v ON_ERROR_STOP=1 -U postgres -d energetica \
-      < docs/scripts/postgres/configure_develrw_fdw_permissions.sql
-    ```
-
-    Traspassa a `postgres` les taules foranes de `public`, concedeix `SELECT` a
-    `energetica`, en revoca els privilegis directes d'escriptura i retira `CREATE`
-    a `public`. Repetim aquest pas després de noves importacions i comprovem els
-    permisos efectius, inclosos els heretats. El rol no ha de ser superusuari.
+    El [SQL històric de permisos FDW](../../scripts/postgres/configure_develrw_fdw_permissions.sql)
+    transfereix les foreign tables a `postgres` i retira `CREATE` a
+    `energetica`. Es conserva com a referència de l’escenari anterior amb
+    manteniment manual; no executar-lo en aquest flux amb reconciliació.
 
 1. Com a `energetica`, fem alguna prova. Aquesta query que consulta una taula de `public` a **HALL**, realment va a consultar aquesta taula a `public` de la **GISCE Producció**
 
